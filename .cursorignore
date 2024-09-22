@@ -1,0 +1,181 @@
+ // Start of Selection
+# .cursorignore file
+
+# Node modules
+node_modules/
+
+# Python virtual environments
+venv/
+env/
+.venv/
+.pyenv/
+pip-wheel-metadata/
+__pypackages__/
+
+# Build directories and files
+build/
+dist/
+out/
+target/
+*.egg-info/
+*.egg
+*.whl
+*.jar
+*.war
+
+# Compiled source files
+*.py[cod]
+__pycache__/
+*.class
+*.o
+*.so
+*.dll
+*.exe
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Log and temporary files
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+*.swn
+*.bak
+*.orig
+debug.log
+error.log
+
+# System files
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+.directory
+.Trash-*/
+
+# IDE/editor configurations
+.vscode/
+.idea/
+.project
+.classpath
+.settings/
+.metadata/
+nbproject/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+*.tmproj
+*.atsuo
+*.ncb
+*.sdf
+*.suo
+*.vcproj
+*.vcxproj
+*.opensdf
+
+# Cache and coverage files
+.cache/
+.nox/
+.tox/
+.hypothesis/
+.coverage
+coverage/
+coverage.*.xml
+
+# Test output
+.htmlcov/
+.pytest_cache/
+nosetests.xml
+coverage.xml
+test-output/
+test-results/
+junit-report.xml
+
+# Documentation builds
+docs/_build/
+site/
+
+# Package manager files
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Yarn and NPM files
+.yarn/
+.pnp.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# MacOS specific files
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.DS_Store
+
+# Windows specific files
+ehthumbs.db
+Thumbs.db:encryptable
+
+# Linux specific files
+*~
+
+# Other unnecessary files
+*.pid
+*.seed
+*.err
+
+# Archives
+*.tar
+*.tar.*
+*.zip
+*.rar
+*.7z
+*.gz
+*.bz2
+*.xz
+*.dmg
+*.iso
+
+# Backup files
+*~
+*.old
+*.backup
+
+# Database files
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+
+# Environment files (use with caution)
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Application-specific files
+*/migrations/*.py
+*/migrations/*.pyc
+instance/
+.webassets-cache
+.exponent/
+Library/
+Temp/
+Obj/
+*.unityproj
+
+# Version control directories
+.hg/
+.bzr/
+.svn/
+CVS/
+
+# Docker files
+.docker/
+docker-compose.override.yml
