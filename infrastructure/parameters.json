@@ -1,0 +1,12 @@
+This file provides parameter values for the CloudFormation template, such as region, environment, or resource-specific configuration details.
+
+[
+    {
+        "ParameterKey": "ProjectName",
+        "ParameterValue": "IoTSensorPlatform"
+    },
+    {
+        "ParameterKey": "Environment",
+        "ParameterValue": "prod"
+    }
+]

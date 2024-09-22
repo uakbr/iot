@@ -1,0 +1,4 @@
+{
+    "temperature_threshold": 30,
+    "humidity_threshold": 70
+}
