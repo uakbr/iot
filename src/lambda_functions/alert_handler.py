@@ -1,39 +1,42 @@
 import json
 import boto3
 import os
+import logging
+from utils import setup_logging, load_config
+
+# Set up logging
+logger = setup_logging()
 
 sns = boto3.client('sns')
-sns_topic_arn = os.environ['SNS_TOPIC_ARN']
-config_bucket = os.environ['CONFIG_BUCKET']
-config_key = os.environ['CONFIG_KEY']
 
-def get_config():
-    s3 = boto3.client('s3')
-    response = s3.get_object(Bucket=config_bucket, Key=config_key)
-    config_content = response['Body'].read().decode('utf-8')
-    return json.loads(config_content)
+SNS_TOPIC_ARN = os.environ.get('SNS_TOPIC_ARN')
+CONFIG_BUCKET = os.environ.get('CONFIG_BUCKET')
+CONFIG_KEY = os.environ.get('CONFIG_KEY')
 
 def lambda_handler(event, context):
-    config = get_config()
-    temperature_threshold = config['temperature_threshold']
-    humidity_threshold = config['humidity_threshold']
+    try:
+        config = load_config(CONFIG_BUCKET, CONFIG_KEY)
+        temperature_threshold = config.get('temperature_threshold', 30)
+        humidity_threshold = config.get('humidity_threshold', 70)
 
-    for record in event['Records']:
-        payload = json.loads(record['body'])
-        alerts = []
+        for record in event['Records']:
+            payload = json.loads(record['body'])
+            alerts = []
 
-        if payload['temperature'] > temperature_threshold:
-            alerts.append(f"High temperature alert: {payload['temperature']}°C from {payload['device_id']}")
-        if payload['humidity'] > humidity_threshold:
-            alerts.append(f"High humidity alert: {payload['humidity']}% from {payload['device_id']}")
+            if payload.get('temperature') > temperature_threshold:
+                alerts.append(f"High temperature alert: {payload['temperature']}°C from {payload['device_id']}")
 
-        for alert in alerts:
-            sns.publish(
-                TopicArn=sns_topic_arn,
-                Message=alert,
-                Subject='IoT Sensor Alert'
-            )
-    return {
-        'statusCode': 200,
-        'body': json.dumps('Alerts processed successfully')
-    }
+            if payload.get('humidity') > humidity_threshold:
+                alerts.append(f"High humidity alert: {payload['humidity']}% from {payload['device_id']}")
+
+            for alert in alerts:
+                response = sns.publish(
+                    TopicArn=SNS_TOPIC_ARN,
+                    Message=alert,
+                    Subject='Sensor Alert'
+                )
+                logger.info(f"Alert sent: {alert}, SNS Message ID: {response['MessageId']}")
+
+    except Exception as e:
+        logger.error(f"Error in alert handler: {e}")
+        raise e

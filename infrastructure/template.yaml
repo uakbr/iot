@@ -27,17 +27,21 @@ Resources:
         - AttributeName: timestamp
           KeyType: RANGE
       BillingMode: PAY_PER_REQUEST
+    DeletionPolicy: Retain
 
-  # S3 Bucket for Configuration and Code
+  # S3 Bucket for Configuration
   ConfigBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub '${ProjectName}-config-${AWS::AccountId}'
+    DeletionPolicy: Retain
 
+  # S3 Bucket for Code
   CodeBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub '${ProjectName}-code-${AWS::AccountId}'
+    DeletionPolicy: Retain
 
   # IAM Role for Lambda Functions
   LambdaExecutionRole:
@@ -62,7 +66,7 @@ Resources:
                 Action:
                   - dynamodb:PutItem
                   - dynamodb:GetItem
-                Resource: !GetAtt SensorDataTable.Arn
+                Resource: !Sub '${SensorDataTable.Arn}'
         - PolicyName: S3Access
           PolicyDocument:
             Statement:
@@ -105,6 +109,12 @@ Resources:
       Environment:
         Variables:
           DYNAMODB_TABLE: !Ref SensorDataTable
+      Events:
+        KinesisEvent:
+          Type: Kinesis
+          Properties:
+            Stream: !Ref SensorDataStream
+            StartingPosition: TRIM_HORIZON
 
   # Lambda Function: Alert Handler
   AlertHandlerFunction:
@@ -144,14 +154,34 @@ Resources:
       RestApiId: !Ref ApiGatewayRestApi
       StageName: !Ref Environment
 
-  # API Gateway Permission for Lambda
-  LambdaInvokePermission:
+  # API Gateway Resource and Method for /sensor-data
+  ApiGatewayResourceSensorData:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+      PathPart: 'sensor-data'
+      RestApiId: !Ref ApiGatewayRestApi
+
+  ApiGatewayMethodPostSensorData:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGatewayRestApi
+      ResourceId: !Ref ApiGatewayResourceSensorData
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DataProcessorFunction.Arn}/invocations'
+
+  # Permission for API Gateway to invoke Lambda
+  ApiGatewayLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref DataProcessorFunction
       Action: 'lambda:InvokeFunction'
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/*/*/*'
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/*/POST/sensor-data'
 
 Outputs:
   ApiEndpoint:

@@ -5,17 +5,18 @@ __pycache__/
 *.dll
 *.dylib
 
-# Virtual environment
+# Virtual environments
 env/
 venv/
 .venv/
+ENV/
 
 # Distribution / packaging
 build/
 dist/
 *.egg-info/
 
-# Logs
+# Logs and reports
 *.log
 
 # OS files
@@ -28,8 +29,13 @@ Thumbs.db
 # AWS credential files
 *.pem
 
-# JetBrains IDEs
+# IDE settings
 .idea/
-
-# Visual Studio Code
 .vscode/
+*.iml
+
+# Backup files
+*~
+
+# Other unneeded files
+*.bak
