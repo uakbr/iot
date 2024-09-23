@@ -26,5 +26,6 @@ aws s3 rb s3://"${CONFIG_S3_BUCKET}" --force || true
 
 echo "Cleanup complete."
 
+# Remove Lambda deployment packages
 rm -f ../src/lambda_functions/lambda_functions.zip
 rm -f ../infrastructure/code.zip
