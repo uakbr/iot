@@ -5,12 +5,14 @@ import logging
 import json
 import decimal
 import boto3
-from hardware_interface import I2CInterface  # If needed
 
 def setup_logging(level=logging.INFO):
     """Set up logging configuration"""
     logger = logging.getLogger()
     if not logger.handlers:
+        # Clear existing handlers
+        logger.handlers = []
+        # Configure logging
         logging.basicConfig(level=level)
     else:
         for handler in logger.handlers:

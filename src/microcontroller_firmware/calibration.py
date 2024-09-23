@@ -1,5 +1,5 @@
 import logging
-from sensor_drivers import TemperatureSensor, HumiditySensor
+from sensor_drivers import TemperatureSensor, HumiditySensor  # Use absolute import
 
 logger = logging.getLogger(__name__)
 

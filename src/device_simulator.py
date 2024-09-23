@@ -40,7 +40,8 @@ def simulate_device():
             "motion_detected": random.choice([True, False]),
         }
         try:
-            response = requests.post(f"{API_ENDPOINT}/sensor-data", json=data)
+            # Ensure API_ENDPOINT includes the full URL
+            response = requests.post(API_ENDPOINT, json=data)
             response.raise_for_status()
             logger.info(f"Data sent: {data}")
         except requests.exceptions.RequestException as e:
@@ -51,7 +52,7 @@ def simulate_device():
                 logger.info(f"Retrying in {sleep_time} seconds...")
                 time.sleep(sleep_time)
                 try:
-                    response = requests.post(f"{API_ENDPOINT}/sensor-data", json=data)
+                    response = requests.post(API_ENDPOINT, json=data)
                     response.raise_for_status()
                     logger.info(f"Data sent on retry {retry}: {data}")
                     break
@@ -64,5 +65,9 @@ def simulate_device():
 if __name__ == "__main__":
     if not API_ENDPOINT:
         logger.error("API_ENDPOINT is not set in the environment variables.")
+        exit(1)
     else:
+        # Make sure API_ENDPOINT ends with '/sensor-data'
+        if not API_ENDPOINT.endswith('/sensor-data'):
+            API_ENDPOINT = API_ENDPOINT.rstrip('/') + '/sensor-data'
         simulate_device()

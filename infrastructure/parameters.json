@@ -3,10 +3,10 @@ This file provides parameter values for the CloudFormation template, such as reg
 [
     {
         "ParameterKey": "ProjectName",
-        "ParameterValue": "IoTSensorPlatform"
+        "ParameterValue": "iot-sensor-platform"
     },
     {
         "ParameterKey": "Environment",
-        "ParameterValue": "prod"
+        "ParameterValue": "dev"
     }
 ]

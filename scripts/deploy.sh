@@ -10,8 +10,8 @@ CODE_S3_BUCKET="${STACK_NAME}-code-$(aws sts get-caller-identity --query Account
 # Package Lambda functions
 echo "Packaging Lambda functions..."
 cd ../src/lambda_functions
+rm -f lambda_functions.zip
 zip -r lambda_functions.zip ./*.py
-zip -g lambda_functions.zip ../utils.py ../hardware_interface.py
 
 # Upload Lambda package to S3
 echo "Uploading Lambda package to S3..."
@@ -23,12 +23,19 @@ aws s3 cp lambda_functions.zip s3://"${CODE_S3_BUCKET}"/
 
 cd ../../scripts
 
+# Check for jq
+if ! command -v jq &> /dev/null; then
+    echo "jq is required but not installed. Please install jq and try again."
+    exit 1
+fi
+
 # Deploy CloudFormation stack
 echo "Deploying CloudFormation stack..."
+PARAMETERS=$(jq -r '.[] | "--parameter-overrides \(.ParameterKey)=\(.ParameterValue)"' "${PARAMETERS_FILE}" | xargs)
 aws cloudformation deploy \
     --stack-name "${STACK_NAME}" \
     --template-file "${TEMPLATE_FILE}" \
-    --parameter-overrides $(cat "${PARAMETERS_FILE}" | jq -r '.[] | "\(.ParameterKey)=\(.ParameterValue)"') \
+    $PARAMETERS \
     --capabilities CAPABILITY_NAMED_IAM
 
 echo "Deployment complete."

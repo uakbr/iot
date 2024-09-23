@@ -37,7 +37,13 @@ def lambda_handler(event, context):
         # ... add more as needed ...
 
         for record in event['Records']:
-            payload = json.loads(record['body'])
+            if 'dynamodb' in record:
+                new_image = record['dynamodb'].get('NewImage', {})
+                # Convert DynamoDB data types to standard types
+                payload = {k: list(v.values())[0] for k, v in new_image.items()}
+            else:
+                continue  # Skip records without DynamoDB data
+
             alerts = []
 
             # Existing checks

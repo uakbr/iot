@@ -2,7 +2,6 @@ import time
 import logging
 from hardware_interface import I2CInterface, SPIInterface, UARTInterface
 from sensor_drivers import TemperatureSensor, HumiditySensor
-from data_sampler import DataSampler
 from calibration import calibrate_sensor
 import json
 import requests
@@ -16,6 +15,27 @@ logger = logging.getLogger(__name__)
 API_ENDPOINT = os.getenv('API_ENDPOINT', 'http://localhost:5000')
 DEVICE_ID = os.getenv('DEVICE_ID', 'device-001')
 SEND_INTERVAL = int(os.getenv('SEND_INTERVAL', '5'))  # seconds
+
+class DataSampler:
+    """
+    Class for sampling data from sensors at regular intervals.
+    """
+    def __init__(self, interval=5):
+        self.interval = interval
+        self.sensors = []
+
+    def add_sensor(self, sensor):
+        self.sensors.append(sensor)
+
+    def sample(self):
+        data = {}
+        for sensor in self.sensors:
+            if hasattr(sensor, 'read_temperature'):
+                data['temperature'] = sensor.read_temperature()
+            elif hasattr(sensor, 'read_humidity'):
+                data['humidity'] = sensor.read_humidity()
+            # Add additional sensor checks as needed
+        return data
 
 def send_data(data):
     """

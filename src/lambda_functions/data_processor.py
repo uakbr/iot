@@ -2,7 +2,7 @@ import json
 import boto3
 import os
 import logging
-from utils import setup_logging
+from utils import setup_logging, DecimalEncoder  # Import DecimalEncoder
 
 # Set up logging
 logger = setup_logging()
@@ -21,33 +21,38 @@ def lambda_handler(event, context):
     Returns:
         None
     """
-    for record in event['Records']:
-        try:
-            payload = json.loads(record['body'])
-            item = {
-                'device_id': payload['device_id'],
-                'timestamp': payload['timestamp'],
-                'temperature': float(payload['temperature']),
-                'humidity': float(payload['humidity']),
-                'air_quality_index': float(payload.get('air_quality_index', 0)),
-                'light_intensity': float(payload.get('light_intensity', 0)),
-                'sound_level': float(payload.get('sound_level', 0)),
-                'pressure': float(payload.get('pressure', 0)),
-                'co2_level': float(payload.get('co2_level', 0)),
-                'uv_index': float(payload.get('uv_index', 0)),
-                'wind_speed': float(payload.get('wind_speed', 0)),
-                'wind_direction': payload.get('wind_direction', 'Unknown'),
-                'battery_level': float(payload.get('battery_level', 100)),
-                'signal_strength': float(payload.get('signal_strength', -100)),
-                'latitude': float(payload.get('latitude', 0.0)),
-                'longitude': float(payload.get('longitude', 0.0)),
-                'orientation': payload.get('orientation', 'Unknown'),
-                'motion_detected': payload.get('motion_detected', False),
-                # ... existing fields ...
-            }
-            table.put_item(Item=item)
-            logger.info(f"Data stored in DynamoDB: {item}")
-        except Exception as e:
-            logger.error(f"Error processing record: {e}")
-            # Optionally, move the record to a dead-letter queue or take other actions
-            raise e
+    try:
+        payload = json.loads(event['body'])
+        item = {
+            'device_id': payload['device_id'],
+            'timestamp': payload['timestamp'],
+            'temperature': float(payload['temperature']),
+            'humidity': float(payload['humidity']),
+            'air_quality_index': float(payload.get('air_quality_index', 0)),
+            'light_intensity': float(payload.get('light_intensity', 0)),
+            'sound_level': float(payload.get('sound_level', 0)),
+            'pressure': float(payload.get('pressure', 0)),
+            'co2_level': float(payload.get('co2_level', 0)),
+            'uv_index': float(payload.get('uv_index', 0)),
+            'wind_speed': float(payload.get('wind_speed', 0)),
+            'wind_direction': payload.get('wind_direction', 'Unknown'),
+            'battery_level': float(payload.get('battery_level', 100)),
+            'signal_strength': float(payload.get('signal_strength', -100)),
+            'latitude': float(payload.get('latitude', 0.0)),
+            'longitude': float(payload.get('longitude', 0.0)),
+            'orientation': payload.get('orientation', 'Unknown'),
+            'motion_detected': payload.get('motion_detected', False),
+            # ... existing fields ...
+        }
+        table.put_item(Item=item)
+        logger.info(f"Data stored in DynamoDB: {item}")
+        return {
+            'statusCode': 200,
+            'body': json.dumps({'message': 'Data stored successfully'}, cls=DecimalEncoder)
+        }
+    except Exception as e:
+        logger.error(f"Error processing event: {e}")
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'error': str(e)})
+        }

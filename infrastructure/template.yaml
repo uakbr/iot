@@ -27,6 +27,8 @@ Resources:
         - AttributeName: timestamp
           KeyType: RANGE
       BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE  # Enable DynamoDB Streams
     DeletionPolicy: Retain
 
   # S3 Bucket for Configuration
@@ -66,7 +68,11 @@ Resources:
                 Action:
                   - dynamodb:PutItem
                   - dynamodb:GetItem
-                Resource: !Sub '${SensorDataTable.Arn}'
+                  - dynamodb:DescribeStream
+                  - dynamodb:GetRecords
+                  - dynamodb:GetShardIterator
+                  - dynamodb:ListStreams
+                Resource: '*'
         - PolicyName: S3Access
           PolicyDocument:
             Statement:
@@ -81,6 +87,16 @@ Resources:
                 Action:
                   - sns:Publish
                 Resource: !Ref SensorAlertTopic
+        - PolicyName: KinesisAccess
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kinesis:PutRecord
+                  - kinesis:PutRecords
+                  - kinesis:GetRecords
+                  - kinesis:GetShardIterator
+                Resource: '*'
 
   # SNS Topic for Alerts
   SensorAlertTopic:
@@ -148,6 +164,16 @@ Resources:
           CONFIG_BUCKET: !Ref ConfigBucket
           CONFIG_KEY: 'config/config.json'
 
+  # Create event source mapping for the AlertHandlerFunction
+  AlertHandlerEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn: !GetAtt SensorDataTable.StreamArn
+      FunctionName: !Ref AlertHandlerFunction
+      StartingPosition: LATEST
+      BatchSize: 100
+      Enabled: True
+
   # API Gateway Rest API
   ApiGatewayRestApi:
     Type: AWS::ApiGateway::RestApi
@@ -196,7 +222,7 @@ Resources:
       FunctionName: !Ref DataProcessorFunction
       Action: 'lambda:InvokeFunction'
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/*/POST/sensor-data'
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/*/${Environment}/POST/sensor-data'
 
 Outputs:
   ApiEndpoint:
