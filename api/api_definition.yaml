@@ -31,7 +31,6 @@ components:
           type: number
         humidity:
           type: number
-        # New data fields
         air_quality_index:
           type: number
         light_intensity:

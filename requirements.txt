@@ -3,3 +3,6 @@ This file lists all the Python packages required for the project. To install the
 boto3
 requests
 python-dotenv
+smbus2
+spidev
+pyserial

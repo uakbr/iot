@@ -25,3 +25,6 @@ aws s3 rm s3://"${CONFIG_S3_BUCKET}" --recursive || true
 aws s3 rb s3://"${CONFIG_S3_BUCKET}" --force || true
 
 echo "Cleanup complete."
+
+rm -f ../src/lambda_functions/lambda_functions.zip
+rm -f ../infrastructure/code.zip

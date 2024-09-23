@@ -11,33 +11,43 @@ dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table(os.environ['DYNAMODB_TABLE'])
 
 def lambda_handler(event, context):
+    """
+    Lambda function to process incoming sensor data and store it in DynamoDB.
+    
+    Parameters:
+        event (dict): AWS event data containing sensor records.
+        context: Runtime information of the Lambda function.
+    
+    Returns:
+        None
+    """
     for record in event['Records']:
-        payload = json.loads(record['body'])
-        item = {
-            'device_id': payload['device_id'],
-            'timestamp': payload['timestamp'],
-            'temperature': str(payload['temperature']),
-            'humidity': str(payload['humidity']),
-            # Add new data fields
-            'air_quality_index': str(payload.get('air_quality_index')),
-            'light_intensity': str(payload.get('light_intensity')),
-            'sound_level': str(payload.get('sound_level')),
-            'pressure': str(payload.get('pressure')),
-            'co2_level': str(payload.get('co2_level')),
-            'uv_index': str(payload.get('uv_index')),
-            'wind_speed': str(payload.get('wind_speed')),
-            'wind_direction': payload.get('wind_direction'),
-            'battery_level': str(payload.get('battery_level')),
-            'signal_strength': str(payload.get('signal_strength')),
-            'latitude': str(payload.get('latitude')),
-            'longitude': str(payload.get('longitude')),
-            'orientation': payload.get('orientation'),
-            'motion_detected': str(payload.get('motion_detected')),
-            # ... existing code ...
-        }
         try:
+            payload = json.loads(record['body'])
+            item = {
+                'device_id': payload['device_id'],
+                'timestamp': payload['timestamp'],
+                'temperature': float(payload['temperature']),
+                'humidity': float(payload['humidity']),
+                'air_quality_index': float(payload.get('air_quality_index', 0)),
+                'light_intensity': float(payload.get('light_intensity', 0)),
+                'sound_level': float(payload.get('sound_level', 0)),
+                'pressure': float(payload.get('pressure', 0)),
+                'co2_level': float(payload.get('co2_level', 0)),
+                'uv_index': float(payload.get('uv_index', 0)),
+                'wind_speed': float(payload.get('wind_speed', 0)),
+                'wind_direction': payload.get('wind_direction', 'Unknown'),
+                'battery_level': float(payload.get('battery_level', 100)),
+                'signal_strength': float(payload.get('signal_strength', -100)),
+                'latitude': float(payload.get('latitude', 0.0)),
+                'longitude': float(payload.get('longitude', 0.0)),
+                'orientation': payload.get('orientation', 'Unknown'),
+                'motion_detected': payload.get('motion_detected', False),
+                # ... existing fields ...
+            }
             table.put_item(Item=item)
             logger.info(f"Data stored in DynamoDB: {item}")
         except Exception as e:
-            logger.error(f"Error storing data in DynamoDB: {e}")
+            logger.error(f"Error processing record: {e}")
+            # Optionally, move the record to a dead-letter queue or take other actions
             raise e

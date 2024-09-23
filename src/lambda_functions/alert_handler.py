@@ -14,6 +14,16 @@ CONFIG_BUCKET = os.environ.get('CONFIG_BUCKET')
 CONFIG_KEY = os.environ.get('CONFIG_KEY')
 
 def lambda_handler(event, context):
+    """
+    Lambda function to handle sensor data alerts based on configurable thresholds.
+    
+    Parameters:
+        event (dict): AWS event data containing sensor records.
+        context: Runtime information of the Lambda function.
+    
+    Returns:
+        None
+    """
     try:
         config = load_config(CONFIG_BUCKET, CONFIG_KEY)
         # Existing thresholds

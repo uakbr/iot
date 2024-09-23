@@ -11,6 +11,7 @@ CODE_S3_BUCKET="${STACK_NAME}-code-$(aws sts get-caller-identity --query Account
 echo "Packaging Lambda functions..."
 cd ../src/lambda_functions
 zip -r lambda_functions.zip ./*.py
+zip -g lambda_functions.zip ../utils.py ../hardware_interface.py
 
 # Upload Lambda package to S3
 echo "Uploading Lambda package to S3..."
