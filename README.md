@@ -28,169 +28,192 @@
 - [License](#license)
 - [Acknowledgments](#acknowledgments)
 
+---
+
 ## Introduction
 
-The **IoT Sensor Data Collection & Analytics Platform** is a robust, scalable, and serverless solution designed to collect, process, and analyze real-time data from distributed IoT devices. This platform enables seamless integration of various sensors capturing a wide array of environmental and device metrics, such as temperature, humidity, air quality, light intensity, sound levels, GPS location, and more.
+The **IoT Sensor Data Collection & Analytics Platform** is a robust, scalable, and serverless solution designed to collect, process, and analyze real-time data from distributed IoT devices. This platform provides end-to-end capabilities for integrating various sensors that capture a comprehensive range of environmental and device metrics, such as temperature, humidity, air quality, light intensity, sound levels, GPS location, and more.
 
-By leveraging the power of AWS services, this platform facilitates:
+By leveraging cutting-edge AWS services and following best practices in cloud architecture, this platform enables:
 
-- **Real-time data ingestion and processing**
-- **Event-driven alerts based on custom thresholds**
-- **Scalable data storage and archiving**
-- **Comprehensive monitoring and logging**
+- **Real-time Data Ingestion and Processing**: High-throughput data ingestion through AWS API Gateway and Lambda functions, ensuring minimal latency and efficient handling of incoming sensor data.
+- **Event-Driven Alerts Based on Custom Thresholds**: Configurable alerting mechanisms using AWS Lambda and SNS, allowing for immediate notifications when specific conditions are met.
+- **Scalable Data Storage and Archiving**: Utilization of AWS DynamoDB and S3 for storing time-series data with virtually unlimited scalability and durability.
+- **Comprehensive Monitoring and Logging**: Enhanced observability through AWS CloudWatch for tracking performance metrics, logging, and setting up alarms for proactive system management.
+- **Secure and Resilient Architecture**: Implemented with security best practices, including IAM role management, encrypted data storage, and secure API endpoints.
 
-This project is ideal for applications in environmental monitoring, industrial IoT, smart cities, agriculture, and any domain that requires real-time insights from sensor data.
+This project adheres to the principles of microservices architecture and serverless computing, ensuring high availability, fault tolerance, and cost-effectiveness. It is ideal for applications in environmental monitoring, industrial IoT, smart cities, agriculture, and any domain requiring real-time insights from sensor data.
+
+---
 
 ## Architecture Overview
 
-The platform employs a microservices architecture using AWS serverless components, which ensures high availability, scalability, and cost-effectiveness.
+The platform is built upon a microservices architecture utilizing AWS serverless components. The design ensures that each component is decoupled, scalable, and can be developed, deployed, and maintained independently. Below is a high-level overview of the system's architecture, along with detailed insights into each component.
 
-- **IoT Devices**: Physical sensors or simulated devices that send sensor data via RESTful API calls.
-- **AWS API Gateway**: Acts as a secure entry point for device data ingestion.
-- **AWS Kinesis Data Streams**: Handles real-time streaming of high-throughput data.
-- **AWS Lambda Functions**: Stateless compute services for processing data and executing business logic.
-  - **Data Processor Function**: Validates and stores incoming data.
-  - **Alert Handler Function**: Evaluates data against thresholds and triggers alerts.
-- **AWS DynamoDB**: A NoSQL database for fast and flexible data storage of time-series sensor data.
-- **AWS SNS (Simple Notification Service)**: Sends notifications and alerts to subscribed endpoints.
-- **AWS S3 (Simple Storage Service)**: Stores configurations and archives data.
-- **AWS CloudWatch**: Monitors the system by collecting logs and metrics.
-- **AWS CloudFormation**: Automates the deployment and management of resources.
+### Key Components
+
+- **IoT Devices**: Physical sensors or simulated devices that send sensor data via RESTful API calls over HTTPS. Devices implement secure communication protocols, support data encryption in transit, and can handle authentication mechanisms as needed.
+
+- **AWS API Gateway**: Serves as a fully managed service that makes it easy for developers to create, publish, maintain, monitor, and secure APIs at any scale. It acts as a front door for applications to access data from IoT devices.
+
+- **AWS Lambda Functions**: Serverless compute services that run code without provisioning or managing servers. The platform utilizes multiple Lambda functions:
+
+  - **Data Processor Function**: Responsible for input validation, data transformation, enrichment, and persistence. It ensures that incoming data conforms to the expected schema and enriches data with metadata if necessary.
+
+  - **Alert Handler Function**: Consumes data from DynamoDB Streams or Kinesis Data Streams, evaluates sensor readings against configurable thresholds, and triggers alerts via SNS when conditions are met.
+
+- **AWS DynamoDB**: A fast and flexible NoSQL database service for applications that need consistent, single-digit millisecond latency at any scale. It stores time-series sensor data, providing high availability and durability.
+
+- **AWS Kinesis Data Streams**: Enables real-time processing of streaming data at massive scale. It facilitates decoupling between the data ingestion layer and downstream processing components.
+
+- **AWS SNS (Simple Notification Service)**: A highly available, durable, secure, fully managed pub/sub messaging service. It allows applications to send time-critical messages to multiple subscribers through a "publish-subscribe" mechanism.
+
+- **AWS S3 (Simple Storage Service)**: Provides secure, durable, and highly scalable object storage. It's used for storing configuration files, such as threshold settings for alerts, and serves as a durable storage solution for data archiving and backups.
+
+- **AWS CloudWatch**: Provides a unified view of operational health and resource utilization. It collects and tracks metrics, collects and monitors log files, sets alarms, and automatically reacts to changes in AWS resources.
+
+- **AWS CloudFormation**: Provides a common language for you to describe and provision all the infrastructure resources in your cloud environment. It allows for infrastructure as code (IaC), enabling automation and reproducibility.
 
 ### Architecture Diagram
 
-![Architecture Diagram](docs/architecture_diagram.png)
+```mermaid
+flowchart TD
+    subgraph IoT Devices
+        Device1[IoT Device]
+        Device2[Simulated Device]
+    end
+
+    Device1 -->|HTTPS POST /sensor-data| APIGateway[[AWS API Gateway]]
+    Device2 -->|HTTPS POST /sensor-data| APIGateway
+
+    APIGateway -->|Invoke| DataProcessorLambda[Lambda: Data Processor]
+
+    DataProcessorLambda -->|Validate & Transform| DataProcessorLambda
+    DataProcessorLambda -->|Store Data| DynamoDB[(AWS DynamoDB)]
+    DataProcessorLambda -->|Publish to Stream| KinesisStream((AWS Kinesis Data Stream))
+
+    KinesisStream -->|Event Trigger| AlertHandlerLambda[Lambda: Alert Handler]
+    AlertHandlerLambda -->|Load Threshold Config| ConfigS3Bucket[(AWS S3: Config Bucket)]
+    AlertHandlerLambda -->|Evaluate Conditions| AlertHandlerLambda
+    AlertHandlerLambda -->|Publish Alert| SNSAlertTopic((AWS SNS: Alert Topic))
+
+    DynamoDB -- Streams --> AlertHandlerLambda
+
+    CloudWatch[(AWS CloudWatch)] --> DataProcessorLambda
+    CloudWatch --> AlertHandlerLambda
+    CloudWatch --> APIGateway
+```
+
+**Explanation**:
+
+- **Data Ingestion**: IoT Devices send data to the API Gateway endpoint using HTTPS POST requests. The use of API Gateway provides a managed front door for applications to access data and functionality from backend services.
+
+- **Data Processing**: The API Gateway triggers the Data Processor Lambda function which processes incoming data. This function handles data validation, transformation, and enrichment.
+
+- **Data Persistence**: Validated data is stored in DynamoDB for persistent, scalable storage. DynamoDB is optimized for high-throughput and low-latency access patterns.
+
+- **Data Streaming**: The Data Processor function also publishes data to Kinesis Data Streams for real-time processing and potential integration with additional consumers.
+
+- **Alerting Mechanism**: The Alert Handler Lambda function is triggered by data arriving in the Kinesis stream or via DynamoDB Streams. It loads the latest threshold configurations from S3 and evaluates incoming data. If thresholds are exceeded, it publishes alerts to an SNS topic.
+
+- **Monitoring and Logging**: AWS CloudWatch collects logs and metrics from the Lambda functions and API Gateway, enabling real-time monitoring and alerting on system performance and errors.
+
+---
 
 ## Features
 
-- **Comprehensive Data Collection**: Supports a wide range of sensor data, including environmental metrics, device health, and positional information.
-- **Real-Time Data Processing**: Uses Kinesis and Lambda functions to process data as it arrives.
-- **Event-Driven Alerts**: Configurable alerts via SNS based on custom thresholds.
-- **Scalable Storage**: DynamoDB for immediate data access and S3 for long-term storage.
-- **Extensible Design**: Easily add new sensors or data types with minimal changes.
-- **High Availability**: Built on AWS's resilient infrastructure.
-- **Security**: Employs AWS IAM roles and policies to secure resources.
-- **Monitoring and Logging**: Detailed logs and metrics available through CloudWatch.
-- **Infrastructure as Code**: Uses CloudFormation for repeatable and version-controlled deployments.
+- **Real-Time Data Processing**: Capable of handling high volumes of data in real-time, ensuring immediate processing and storage.
+
+- **Scalable Architecture**: Designed to scale horizontally with the number of devices and data throughput, leveraging AWS auto-scaling features and serverless services.
+
+- **Configurable Alerting Mechanism**: Thresholds and alert criteria can be adjusted dynamically without code changes, by updating configurations stored securely in S3.
+
+- **Secure Communication**: All data transmissions are secured over HTTPS using TLS encryption, and AWS services are configured with strict IAM policies following the principle of least privilege.
+
+- **Extensible Data Schema**: Supports a wide range of sensor data, and the schema can be extended to incorporate additional metrics as needed. The system uses schema validation to ensure data integrity.
+
+- **Infrastructure as Code**: Complete environment setup and teardown are managed via AWS CloudFormation templates and deployment scripts, ensuring reproducible and auditable infrastructure deployments.
+
+- **High Availability and Fault Tolerance**: Leveraging AWS managed services ensures that the platform is highly available and resilient to failures.
+
+---
 
 ## Supported Devices
 
-The platform is designed to work with a wide array of IoT devices, including but not limited to:
+The platform is designed with flexibility in mind, allowing integration with various types of IoT devices and sensors, including but not limited to:
 
-- **Environmental Sensors**:
-  - Temperature and humidity sensors
-  - Air quality monitors (e.g., CO₂, VOCs, particulate matter)
-  - Light sensors (photodiodes, phototransistors)
-  - Sound level meters
-  - Barometric pressure sensors
-  - UV index sensors
-  - Anemometers (wind speed and direction)
-  - Rain gauges
-- **Device Health Sensors**:
-  - Battery level monitors
-  - Signal strength indicators
-  - Motion detectors (accelerometers, gyroscopes)
-  - GPS modules for location tracking
-- **Industrial Sensors**:
-  - Vibration sensors
-  - Tilt sensors
-  - Proximity sensors
+- **Temperature Sensors**: Devices capable of measuring and reporting ambient temperature.
 
-**Note**: Devices must be capable of making HTTP requests to send data to the API Gateway. For devices that cannot natively make HTTP requests, consider using an intermediary gateway or edge computing device.
+- **Humidity Sensors**: Devices measuring relative humidity levels in the environment.
 
-### Data Retrieval from Devices
+- **Air Quality Sensors**: Sensors providing Air Quality Index (AQI) and CO₂ concentration levels.
 
-To ensure seamless data collection from individual devices, the following technical processes are implemented:
+- **Light Intensity Sensors**: Devices measuring luminance in the environment.
 
-#### Hardware Interfaces
+- **Sound Level Meters**: Sensors capable of measuring ambient noise levels in decibels.
 
-- **I2C (Inter-Integrated Circuit)**: Utilized for connecting sensors requiring low-speed communication, such as temperature, humidity, and light sensors.
-- **SPI (Serial Peripheral Interface)**: Employed for high-speed data transfer with sensors like barometric pressure and air quality monitors.
-- **UART (Universal Asynchronous Receiver/Transmitter)**: Used for serial communication with GPS modules and motion detectors.
+- **Barometric Pressure Sensors**: Devices measuring atmospheric pressure.
 
-#### Microcontroller Programming
+- **GPS Modules**: For devices requiring geolocation capabilities, providing latitude and longitude data.
 
-- **Firmware Development**: Implemented using C/C++ or MicroPython for microcontrollers like ESP32 or Arduino.
-- **Sensor Drivers**: Configure and read data from various sensors using appropriate libraries.
-- **Data Sampling**: Scheduled tasks to sample sensor data at regular intervals (e.g., every second).
-- **Calibration**: Perform sensor calibration to maintain data accuracy over time.
+- **Motion Detectors**: Sensors capable of detecting movement or orientation changes.
 
-#### Data Processing
+- **Custom Devices**: Any IoT device that can communicate over HTTPS and adhere to the specified data schema for payloads.
 
-- **Filtering**: Apply filters such as Kalman or moving average to smooth sensor data and eliminate noise.
-- **Unit Conversion**: Convert raw sensor data to standardized units (e.g., Celsius for temperature, ppm for CO₂ levels).
-- **Data Aggregation**: Aggregate data points if necessary before transmission to reduce payload size.
-
-#### Data Formatting
-
-- **JSON Payloads**: Structure data in JSON format adhering to the defined schema, including mandatory fields like `device_id` and `timestamp`.
-- **Timestamping**: Use synchronized UTC timestamps to ensure data consistency across devices.
-
-#### Communication Protocols
-
-- **HTTP/HTTPS**: Devices communicate with the AWS API Gateway using secure RESTful API calls with POST requests.
-- **Authentication**: Include API keys or tokens in headers for authenticated access (if enabled).
-- **Payload Management**: Optimize JSON payloads to ensure efficient data transmission with minimal latency.
-
-#### Network Connectivity
-
-- **Wi-Fi Modules**: Configure devices with Wi-Fi capabilities to establish connections to local networks.
-- **Cellular Modules**: Use cellular connectivity (e.g., LTE) for devices deployed in remote locations without Wi-Fi access.
-- **Ethernet Connections**: For industrial applications requiring wired connectivity for reliability.
-
-#### Power Management
-
-- **Battery Monitoring**: Continuously monitor battery levels and report low power status.
-- **Sleep Modes**: Implement deep sleep modes in microcontrollers to conserve energy during inactive periods.
-- **Energy Harvesting**: Utilize solar panels or other energy harvesting methods to prolong device operational lifespan.
-
-#### Edge Computing (Optional)
-
-- **Data Aggregation Gateways**: Deploy edge devices like Raspberry Pi to aggregate and preprocess data from multiple sensors.
-- **Local Storage**: Temporarily store data locally to handle intermittent network connectivity.
-- **Protocol Translation**: Convert data from various sensor protocols to unified HTTP requests for cloud transmission.
-
-#### Error Handling and Retries
-
-- **Network Failures**: Implement retry logic with exponential backoff for failed transmissions to handle transient network issues.
-- **Data Validation**: Validate data integrity before transmission, using checksums or CRC.
-- **Exception Handling**: Ensure microcontrollers can recover from unexpected states or data anomalies by resetting or triggering watchdog timers.
+---
 
 ## Use Cases
 
-- **Environmental Monitoring**: Track air quality, noise pollution, and weather conditions in real time.
-- **Smart Agriculture**: Monitor soil moisture, temperature, and humidity to optimize irrigation.
-- **Asset Tracking**: Use GPS data to track the location of vehicles or equipment.
-- **Industrial Automation**: Monitor machinery health by collecting vibration and pressure data.
-- **Smart Cities**: Collect data from distributed sensors for traffic management and public safety.
-- **Energy Management**: Monitor energy consumption and optimize usage patterns.
+- **Environmental Monitoring**: Real-time monitoring of environmental conditions in sensitive areas such as laboratories, data centers, or natural reserves.
+
+- **Industrial IoT**: Monitoring equipment health and facility conditions in manufacturing plants, enabling predictive maintenance and reducing downtime.
+
+- **Smart Cities**: Collecting data from distributed sensors for urban planning, traffic management, pollution control, and public safety.
+
+- **Agriculture and Farming**: Monitoring soil moisture, weather conditions, and other environmental factors crucial for crop management and yield optimization.
+
+- **Asset Tracking and Management**: Using GPS-enabled devices to track the location, status, and condition of valuable assets in logistics and supply chain operations.
+
+---
 
 ## Technologies Used
 
-- **Programming Language**: Python 3.7+
-- **Infrastructure as Code (IaC)**: AWS CloudFormation
-- **Data Format**: JSON
+- **Programming Languages**:
+  - **Python 3.8**: Used for developing AWS Lambda functions and microcontroller firmware, leveraging its rich ecosystem and compatibility with AWS services.
+
 - **AWS Services**:
-  - **Compute**: Lambda
-  - **Storage**: S3, DynamoDB
-  - **Networking**: API Gateway, VPC (optional)
-  - **Streaming**: Kinesis Data Streams
-  - **Messaging**: SNS
-  - **Monitoring**: CloudWatch
-  - **Event Management**: EventBridge
-- **Tools and Libraries**:
-  - **AWS CLI**: Command-line interface for AWS services
-  - **Boto3**: AWS SDK for Python
-  - **Requests**: HTTP library for Python
-  - **Python Dotenv**: For environment variable management
+  - **API Gateway**: For creating, publishing, and securing RESTful APIs.
+  - **Lambda**: For running code without provisioning or managing servers.
+  - **DynamoDB**: As a NoSQL database for high-performance data storage.
+  - **Kinesis Data Streams**: For real-time data streaming and processing.
+  - **SNS**: For sending notifications and alerts.
+  - **S3**: For object storage, including configurations and logs.
+  - **CloudWatch**: For monitoring AWS resources and applications.
+  - **CloudFormation**: For infrastructure orchestration using code.
+
+- **Other Tools**:
+  - **AWS CLI**: Command Line Interface for interacting with AWS services.
+  - **Git**: Version control system for codebase management.
+  - **MermaidJS**: For creating and visualizing architecture diagrams within Markdown documents.
+  - **jq**: Lightweight and flexible command-line JSON processor used in scripts.
+
+---
 
 ## Prerequisites
 
-- **AWS Account**: Required for deploying AWS resources.
-- **AWS CLI**: Installed and configured with appropriate permissions.
-- **Python 3.7+**: Ensure Python is installed.
-- **Git**: For cloning the repository.
-- **IAM Permissions**: Ability to create IAM roles, Lambda functions, DynamoDB tables, and other AWS resources.
+- **AWS Account**: An active AWS account with permissions to create and manage resources like Lambda functions, DynamoDB tables, and more.
+
+- **AWS CLI**: Installed and configured with IAM credentials that have the necessary permissions.
+
+- **Python 3.8**: Installed on your local machine along with `pip` for managing Python packages.
+
+- **Git**: Installed for cloning the repository and contributing to the project.
+
+- **jq**: Installed for processing JSON in shell scripts (used in deployment scripts).
+
+- **Mermaid Support**: If viewing architecture diagrams locally, ensure your Markdown viewer or IDE supports MermaidJS rendering.
+
+---
 
 ## Getting Started
 
@@ -229,8 +252,10 @@ cd scripts
 **Note**: Ensure you have execution permissions for `deploy.sh` (`chmod +x deploy.sh`). The deployment process will:
 
 - Package and upload Lambda functions to S3.
-- Deploy CloudFormation stack to create AWS resources.
-- Output the API Gateway endpoint URL.
+- Deploy the CloudFormation stack to create AWS resources.
+- Output the API Gateway endpoint URL for use with IoT devices.
+
+---
 
 ## Directory Structure
 
@@ -245,7 +270,8 @@ iot-sensor-platform/
 ├── config/
 │   └── config.json
 ├── docs/
-│   └── architecture_diagram.png
+│   ├── architecture_diagram.png
+│   └── technical_specifications.md
 ├── infrastructure/
 │   ├── template.yaml
 │   └── parameters.json
@@ -254,63 +280,49 @@ iot-sensor-platform/
 │   └── cleanup.sh
 ├── src/
 │   ├── device_simulator.py
-│   └── lambda_functions/
-│       ├── alert_handler.py
-│       ├── data_processor.py
-│       └── utils.py
+│   ├── lambda_functions/
+│   │   ├── __init__.py
+│   │   ├── alert_handler.py
+│   │   ├── data_processor.py
+│   │   └── utils.py
+│   └── microcontroller_firmware/
+│       ├── __init__.py
+│       ├── main.py
+│       ├── data_sampler.py
+│       ├── calibration.py
+│       ├── sensor_drivers.py
+│       └── hardware_interface.py
 ├── .env.example
 └── tests/
     └── test_functions.py
 ```
 
-- **README.md**: Project documentation (this file).
-- **LICENSE**: Project license (MIT).
-- **.gitignore**: Specifies intentionally untracked files.
-- **requirements.txt**: Python dependencies.
-- **api/**: API Gateway definitions.
-- **config/**: Configuration files for thresholds and settings.
-- **docs/**: Documentation assets.
-- **infrastructure/**: CloudFormation templates and parameters.
-- **scripts/**: Deployment and cleanup scripts.
-- **src/**: Source code.
-  - **device_simulator.py**: Simulates IoT devices.
-  - **lambda_functions/**: AWS Lambda function code.
-  - **utils.py**: Utility functions and helpers.
-- **.env.example**: Example environment variables file.
-- **tests/**: Unit and integration tests.
+---
 
 ## Usage
 
 ### Running the Device Simulator
 
-The device simulator sends simulated sensor data to the API Gateway, mimicking real IoT devices.
+Use the provided device simulator to emulate IoT devices, which is particularly useful for testing and development purposes.
 
-1. **Copy the `.env.example` file to `.env`**
+```bash
+python src/device_simulator.py
+```
 
-   ```bash
-   cp .env.example .env
-   ```
+Ensure that the `API_ENDPOINT` environment variable is set to the API Gateway endpoint output during deployment.
 
-2. **Update the `.env` file**
-
-   - Set the `API_ENDPOINT` variable to your API Gateway URL obtained from the deployment output.
-   - Adjust `DEVICE_ID` and `SEND_INTERVAL` as needed.
-
-3. **Run the simulator**
-
-   ```bash
-   cd src
-   python device_simulator.py
-   ```
+```bash
+export API_ENDPOINT="https://your-api-endpoint.amazonaws.com/dev"
+```
 
 ### Integrating Real IoT Devices
 
-To connect real devices:
+To integrate actual IoT devices into the platform, follow these steps:
 
-1. **Configure Device Networking**
+1. **Prepare the Device**
 
-   - Ensure the device can make HTTPS requests.
-   - Configure network settings for internet access.
+   - Ensure the device supports making HTTPS requests and can parse JSON responses.
+   - Configure network settings to allow internet access, possibly through Wi-Fi, Ethernet, or cellular connectivity.
 
 2. **Set API Endpoint**
 
@@ -318,46 +330,62 @@ To connect real devices:
 
 3. **Format Data Payload**
 
-   - Structure the JSON payload according to the updated data schema (see [Data Schema](#data-schema)).
+   - Structure the JSON payload according to the data schema (see [Data Schema](#data-schema)).
+   - Implement any necessary data serialization for the sensors used.
 
-4. **Handle Authentication (Optional)**
+4. **Implement Error Handling and Retries**
 
-   - Implement API keys or other authentication mechanisms if enabled.
+   - Handle HTTP responses appropriately, including retries with exponential backoff in case of failures.
+
+5. **Handle Authentication (Optional)**
+
+   - Implement API keys or other authentication mechanisms if they are enabled in your API Gateway endpoint.
 
 ### Monitoring Data Processing
 
-Use AWS CloudWatch to monitor the system:
+Use AWS CloudWatch to monitor the system's health and performance:
 
 - **Logs**:
-  - Access logs for `data_processor` and `alert_handler` Lambda functions.
-  - Analyze log streams for errors or performance issues.
+  - Access logs for `data_processor` and `alert_handler` Lambda functions to debug issues or trace executions.
+  - Analyze log streams for errors, warnings, and informational messages.
+
 - **Metrics**:
-  - Monitor invocation counts, durations, and error rates.
-  - Set up custom dashboards and alarms.
+  - Monitor key metrics such as Lambda invocation counts, durations, error rates, and throttling.
+  - Set up custom dashboards for a real-time view of system performance.
+
+- **Alarms**:
+  - Configure CloudWatch Alarms to notify you when certain thresholds are crossed, such as high error rates or increased latency.
 
 ### Accessing Stored Data
 
-Retrieve sensor data from DynamoDB:
+Retrieve sensor data stored in DynamoDB:
 
-- **AWS Console > DynamoDB > Tables**
-  - Select the `IoTSensorPlatform-SensorDataTable`.
-  - Use the **Explore Table** feature to query data.
+- **Via AWS Console**:
+  - Navigate to **DynamoDB** > **Tables**.
+  - Select the `iot-sensor-platform-SensorDataTable`.
+  - Use the **Explore Table** feature to query and scan data.
 
-- **Programmatic Access**:
-  - Use Boto3 or AWS SDKs to query data in applications.
+- **Programmatically**:
+  - Use AWS SDKs to access DynamoDB data for custom applications or analytics.
 
 ### Viewing Logs and Alerts
 
-Monitor alerts via SNS and CloudWatch:
+- **CloudWatch Logs**:
+  - View detailed logs for the Lambda functions and API Gateway access logs.
 
-- **AWS Console > SNS > Topics**
-  - Subscribe to the `SensorAlertTopic` via email, SMS, or other protocols.
-- **AWS Console > CloudWatch > Alarms**
-  - View and configure alarms based on metrics.
+- **SNS Subscriptions**:
+  - Subscribe to the SNS topic via email, SMS, or other supported protocols to receive real-time alerts.
+  - Ensure that your subscription is confirmed to start receiving messages.
+
+---
 
 ## Configuration
 
-Adjust settings in `config/config.json` stored in S3:
+Configuration files are stored in the `config/` directory and are uploaded to the S3 Config Bucket during deployment.
+
+- **config.json**: Contains threshold values and settings for the alert handler Lambda function.
+
+Example `config.json`:
 
 ```json
 {
@@ -370,23 +398,22 @@ Adjust settings in `config/config.json` stored in S3:
 }
 ```
 
-- **temperature_threshold**: Threshold for temperature alerts.
-- **humidity_threshold**: Threshold for humidity alerts.
-- **aqi_threshold**: Threshold for Air Quality Index alerts.
-- **co2_threshold**: Threshold for CO₂ level alerts.
-- **noise_level_threshold**: Threshold for sound level alerts.
-- **battery_level_threshold**: Threshold for low battery alerts.
-
 **Updating Configurations**:
 
-- Modify the `config.json` file locally.
-- Upload it to the S3 bucket specified by the `CONFIG_BUCKET` environment variable.
+1. Modify the `config.json` file locally with the desired threshold values.
+2. Upload the updated file to the S3 bucket specified by the `CONFIG_BUCKET` environment variable in the Lambda functions.
+
+```bash
+aws s3 cp config/config.json s3://your-config-bucket/config.json
+```
+
+---
 
 ## Data Schema
 
-The platform expects data in a specific JSON format. Below is the updated schema reflecting all the data points collected:
+The platform expects data in a specific JSON format to ensure consistency and reliability. Below is the schema reflecting all the data points collected:
 
-```
+```json
 {
     "device_id": "string",
     "timestamp": "YYYY-MM-DDTHH:MM:SSZ",
@@ -411,13 +438,23 @@ The platform expects data in a specific JSON format. Below is the updated schema
 
 **Key Points**:
 
-- **Mandatory Fields**: `device_id`, `timestamp`, `temperature`, `humidity`.
-- **Optional Fields**: All other fields are optional but recommended where applicable.
-- **Data Types**: Ensure data types match the schema (e.g., floats for numerical values).
+- **Mandatory Fields**: `device_id`, `timestamp`, and at least one sensor reading (e.g., `temperature`, `humidity`).
+- **Optional Fields**: All other fields are optional but recommended where applicable to enrich the data.
+- **Data Types**:
+  - **Strings**: Enclosed in quotes.
+  - **Floats**: Decimal numbers without quotes.
+  - **Booleans**: `true` or `false` literals.
+- **Timestamp Format**: ISO 8601 format, e.g., `"2023-10-15T14:30:00Z"`.
+
+**Data Validation**:
+
+- The Data Processor Lambda function performs schema validation. Submitting data that doesn't conform to the schema will result in a validation error and the data will be rejected.
+
+---
 
 ## Cleanup
 
-To delete AWS resources and avoid ongoing charges:
+To delete AWS resources and avoid ongoing charges, use the provided cleanup script.
 
 ```bash
 cd scripts
@@ -426,56 +463,56 @@ cd scripts
 
 **Note**: Ensure you have execution permissions for `cleanup.sh` (`chmod +x cleanup.sh`). The cleanup script will:
 
-- Delete the CloudFormation stack.
-- Remove the S3 buckets used for code and configuration.
-- Confirm before deletion to prevent accidental loss.
+- Delete the CloudFormation stack, which in turn deletes all associated resources.
+- Remove S3 buckets and their contents created during deployment.
+- Detach and delete IAM roles and policies associated with the resources.
+
+**Warning**: This action is irreversible. Ensure you have backups of any data or configurations you wish to keep before proceeding.
+
+---
 
 ## Contributing
 
-Contributions are welcome! Please follow these guidelines:
+Contributions are welcome! Whether it's reporting a bug, suggesting new features, or submitting a pull request, your input is valuable.
 
-1. **Fork the Repository**
+**Guidelines**:
 
-   - Click the "Fork" button at the top right of the repository page.
+- **Fork the Repository**: Create a personal fork of the repository on GitHub.
+- **Create a Feature Branch**: Develop your feature or fix in an isolated branch.
+- **Submit a Pull Request**: Provide a clear description of your changes and the problem they solve.
+- **Code Style**: Follow the existing code style and conventions.
+- **Testing**: Ensure your changes are thoroughly tested.
 
-2. **Create a New Branch**
+Please read the [CONTRIBUTING](CONTRIBUTING.md) guide for detailed guidelines.
 
-   ```bash
-   git checkout -b feature/YourFeature
-   ```
-
-3. **Make Changes**
-
-   - Implement your feature or bug fix.
-   - Write unit tests in the `tests/` directory.
-   - Update documentation as needed.
-
-4. **Commit Your Changes**
-
-   ```bash
-   git commit -am 'Add new feature'
-   ```
-
-5. **Push to the Branch**
-
-   ```bash
-   git push origin feature/YourFeature
-   ```
-
-6. **Open a Pull Request**
-
-   - Go to your fork on GitHub.
-   - Click the "New Pull Request" button.
+---
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE), which permits reuse within proprietary software provided all copies of the licensed software include a copy of the MIT License terms and the copyright notice.
+This project is licensed under the [MIT License](LICENSE).
+
+---
 
 ## Acknowledgments
 
-- [AWS Documentation](https://docs.aws.amazon.com/)
-- [Boto3 Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
-- [Serverless Architecture Patterns](https://docs.aws.amazon.com/lambda/latest/dg/lambda-design.html)
-- [OpenAPI Specification](https://swagger.io/specification/)
+- **AWS Documentation**: Providing comprehensive resources and guides on AWS services.
+- **Open-Source Community**: For contributing tools, libraries, and insights that make projects like this possible.
+- **Contributors**: Thanks to all who have contributed to this project.
+
+---
+
+**Additional Technical Information**
+
+For more detailed technical specifications, design documents, and implementation details, please refer to the [Technical Specifications](docs/technical_specifications.md) document in the `docs/` directory.
+
+---
+
+**Support**
+
+If you encounter any issues or have questions about the platform:
+
+- **Issue Tracker**: Open an issue on the GitHub repository.
+- **Email**: Contact the maintainers at support@iot-sensor-platform.example.com.
+- **Community Discussions**: Join the discussion forums or Slack channel (links provided in the repository).
 
 ---
