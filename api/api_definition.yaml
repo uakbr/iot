@@ -31,6 +31,7 @@ components:
           type: number
         humidity:
           type: number
+        # New data fields
         air_quality_index:
           type: number
         light_intensity:
@@ -64,5 +65,7 @@ components:
         - timestamp
         - temperature
         - humidity
-        # Add required fields if necessary
-      # ... existing code ...
+        - air_quality_index
+        - sound_level
+        - co2_level
+        - battery_level

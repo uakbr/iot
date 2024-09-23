@@ -80,13 +80,28 @@ Resources:
               - Effect: Allow
                 Action:
                   - sns:Publish
-                Resource: '*'
+                Resource: !Ref SensorAlertTopic
 
   # SNS Topic for Alerts
   SensorAlertTopic:
     Type: AWS::SNS::Topic
     Properties:
       TopicName: !Sub '${ProjectName}-SensorAlertTopic'
+    DeletionPolicy: Retain
+
+  # IAM Policy for SNS Access
+  SNSPublishAccess:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub '${ProjectName}-SNSPublishAccess'
+      Roles:
+        - !Ref LambdaExecutionRole
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action:
+              - sns:Publish
+            Resource: !Ref SensorAlertTopic
 
   # Kinesis Data Stream
   SensorDataStream:

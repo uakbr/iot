@@ -179,3 +179,11 @@ CVS/
 # Docker files
 .docker/
 docker-compose.override.yml
+
+# Ignore Lambda deployment packages
+src/lambda_functions/lambda_functions.zip
+infrastructure/code.zip
+
+# Ignore microcontroller firmware cache and build artifacts
+src/microcontroller_firmware/__pycache__/
+src/microcontroller_firmware/*.pyc

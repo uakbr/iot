@@ -386,7 +386,7 @@ Adjust settings in `config/config.json` stored in S3:
 
 The platform expects data in a specific JSON format. Below is the updated schema reflecting all the data points collected:
 
-`json
+```
 {
     "device_id": "string",
     "timestamp": "YYYY-MM-DDTHH:MM:SSZ",
