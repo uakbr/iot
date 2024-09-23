@@ -18,6 +18,22 @@ def lambda_handler(event, context):
             'timestamp': payload['timestamp'],
             'temperature': str(payload['temperature']),
             'humidity': str(payload['humidity']),
+            # Add new data fields
+            'air_quality_index': str(payload.get('air_quality_index')),
+            'light_intensity': str(payload.get('light_intensity')),
+            'sound_level': str(payload.get('sound_level')),
+            'pressure': str(payload.get('pressure')),
+            'co2_level': str(payload.get('co2_level')),
+            'uv_index': str(payload.get('uv_index')),
+            'wind_speed': str(payload.get('wind_speed')),
+            'wind_direction': payload.get('wind_direction'),
+            'battery_level': str(payload.get('battery_level')),
+            'signal_strength': str(payload.get('signal_strength')),
+            'latitude': str(payload.get('latitude')),
+            'longitude': str(payload.get('longitude')),
+            'orientation': payload.get('orientation'),
+            'motion_detected': str(payload.get('motion_detected')),
+            # ... existing code ...
         }
         try:
             table.put_item(Item=item)

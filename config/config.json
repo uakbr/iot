@@ -1,4 +1,9 @@
 {
     "temperature_threshold": 30,
-    "humidity_threshold": 70
+    "humidity_threshold": 70,
+    "aqi_threshold": 100,
+    "co2_threshold": 1000,
+    "noise_level_threshold": 85,
+    "battery_level_threshold": 20
+    // ... additional thresholds ...
 }

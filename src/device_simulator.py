@@ -22,7 +22,22 @@ def simulate_device():
             "device_id": DEVICE_ID,
             "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
             "temperature": round(random.uniform(15.0, 40.0), 2),
-            "humidity": round(random.uniform(30.0, 90.0), 2)
+            "humidity": round(random.uniform(30.0, 90.0), 2),
+            # New simulated data
+            "air_quality_index": round(random.uniform(0, 500), 2),
+            "light_intensity": round(random.uniform(0, 10000), 2),  # in lumens
+            "sound_level": round(random.uniform(30, 130), 2),  # in decibels
+            "pressure": round(random.uniform(950, 1050), 2),  # in hPa
+            "co2_level": round(random.uniform(400, 5000), 2),  # in ppm
+            "uv_index": round(random.uniform(0, 11), 2),
+            "wind_speed": round(random.uniform(0, 100), 2),  # in km/h
+            "wind_direction": random.choice(['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']),
+            "battery_level": round(random.uniform(0, 100), 2),  # in percentage
+            "signal_strength": round(random.uniform(-120, 0), 2),  # in dBm
+            "latitude": round(random.uniform(-90.0, 90.0), 6),
+            "longitude": round(random.uniform(-180.0, 180.0), 6),
+            "orientation": random.choice(['Upright', 'Upside Down', 'Sideways']),
+            "motion_detected": random.choice([True, False]),
         }
         try:
             response = requests.post(f"{API_ENDPOINT}/sensor-data", json=data)

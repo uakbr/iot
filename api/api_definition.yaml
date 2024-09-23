@@ -31,8 +31,39 @@ components:
           type: number
         humidity:
           type: number
+        # New data fields
+        air_quality_index:
+          type: number
+        light_intensity:
+          type: number
+        sound_level:
+          type: number
+        pressure:
+          type: number
+        co2_level:
+          type: number
+        uv_index:
+          type: number
+        wind_speed:
+          type: number
+        wind_direction:
+          type: string
+        battery_level:
+          type: number
+        signal_strength:
+          type: number
+        latitude:
+          type: number
+        longitude:
+          type: number
+        orientation:
+          type: string
+        motion_detected:
+          type: boolean
       required:
         - device_id
         - timestamp
         - temperature
         - humidity
+        # Add required fields if necessary
+      # ... existing code ...
