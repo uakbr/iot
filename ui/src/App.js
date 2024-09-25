@@ -1,46 +1,51 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import './App.css';
 
 function App() {
   const [sensorData, setSensorData] = useState([]);
 
   useEffect(() => {
-    // Fetch historical data from your backend API
-    axios.get('/api/sensor-data')
-      .then(response => {
-        setSensorData(response.data);
-      })
-      .catch(error => {
+    async function fetchData() {
+      try {
+        const response = await fetch('https://your-api-endpoint.amazonaws.com/dev/sensor-data');
+        const data = await response.json();
+        setSensorData(data.Items); // Adjust based on your API's response
+      } catch (error) {
         console.error('Error fetching sensor data:', error);
-      });
+      }
+    }
+    fetchData();
   }, []);
 
   return (
     <div className="App">
       <h1>IoT Sensor Data Dashboard</h1>
-      <table>
-        <thead>
-          <tr>
-            <th>Device ID</th>
-            <th>Timestamp</th>
-            <th>Temperature (°C)</th>
-            <th>Humidity (%)</th>
-            {/* Add other sensor fields */}
-          </tr>
-        </thead>
-        <tbody>
-          {sensorData.map((data, index) => (
-            <tr key={index}>
-              <td>{data.device_id}</td>
-              <td>{data.timestamp}</td>
-              <td>{data.temperature}</td>
-              <td>{data.humidity}</td>
-              {/* Add other sensor fields */}
+      {sensorData.length > 0 ? (
+        <table>
+          <thead>
+            <tr>
+              <th>Device ID</th>
+              <th>Timestamp</th>
+              <th>Temperature (°C)</th>
+              <th>Humidity (%)</th>
+              {/* Add other sensor fields as needed */}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sensorData.map((data, index) => (
+              <tr key={index}>
+                <td>{data.device_id}</td>
+                <td>{data.timestamp}</td>
+                <td>{data.temperature}</td>
+                <td>{data.humidity}</td>
+                {/* Add other sensor fields as needed */}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p>No sensor data available.</p>
+      )}
     </div>
   );
 }

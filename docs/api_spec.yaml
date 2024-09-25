@@ -17,7 +17,6 @@ paths:
           description: Successful operation
         '400':
           description: Invalid input
-
 components:
   schemas:
     SensorData:
@@ -32,7 +31,7 @@ components:
           type: number
         humidity:
           type: number
-        # ... add other fields ...
+        # Add other sensor fields as necessary
       required:
         - device_id
         - timestamp

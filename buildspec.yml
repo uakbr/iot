@@ -1,0 +1,16 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.8
+    commands:
+      - pip install -r requirements.txt
+  build:
+    commands:
+      - echo "Building Lambda functions..."
+      - cd src/lambda_functions
+      - zip -r ../../lambda_functions.zip ./*.py
+artifacts:
+  files:
+    - lambda_functions.zip

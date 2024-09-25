@@ -158,7 +158,7 @@ Resources:
           ApplicationCodeConfiguration:
             CodeContent:
               S3ContentLocation:
-                BucketARN: !Sub "arn:aws:s3:::${CodeS3Bucket}"
+                BucketARN: !Sub "arn:aws:s3:::${CodeBucket}"
                 FileKey: "analytics/real_time_metrics.sql"
             CodeContentType: "SQL"
 
@@ -261,11 +261,11 @@ Resources:
   ApiGatewayMethodPostSensorData:
     Type: AWS::ApiGateway::Method
     Properties:
-      RestApiId: !Ref ApiGatewayRestApi
-      ResourceId: !Ref ApiGatewayResourceSensorData
       HttpMethod: POST
+      ResourceId: !Ref ApiGatewayResourceSensorData
+      RestApiId: !Ref ApiGatewayRestApi
       AuthorizationType: NONE
-      ApiKeyRequired: true  # Require API Key
+      ApiKeyRequired: true
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
