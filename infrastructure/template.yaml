@@ -146,6 +146,8 @@ Resources:
           Properties:
             Stream: !Ref SensorDataStream
             StartingPosition: TRIM_HORIZON
+      TracingConfig:
+        Mode: Active  # Enable X-Ray tracing
 
   # Lambda Function: Alert Handler
   AlertHandlerFunction:
@@ -163,6 +165,8 @@ Resources:
           SNS_TOPIC_ARN: !Ref SensorAlertTopic
           CONFIG_BUCKET: !Ref ConfigBucket
           CONFIG_KEY: 'config/config.json'
+      TracingConfig:
+        Mode: Active  # Enable X-Ray tracing
 
   # Create event source mapping for the AlertHandlerFunction
   AlertHandlerEventSourceMapping:
@@ -210,6 +214,7 @@ Resources:
       ResourceId: !Ref ApiGatewayResourceSensorData
       HttpMethod: POST
       AuthorizationType: NONE
+      ApiKeyRequired: true  # Require API Key
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
@@ -223,6 +228,34 @@ Resources:
       Action: 'lambda:InvokeFunction'
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/*/${Environment}/POST/sensor-data'
+
+  # API Gateway Usage Plan and API Key
+  ApiGatewayUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    Properties:
+      UsagePlanName: !Sub '${ProjectName}-UsagePlan'
+      ApiStages:
+        - ApiId: !Ref ApiGatewayRestApi
+          Stage: !Ref Environment
+      Throttle:
+        BurstLimit: 1000
+        RateLimit: 5000
+
+  ApiGatewayApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Name: !Sub '${ProjectName}-ApiKey'
+      Enabled: true
+      StageKeys:
+        - RestApiId: !Ref ApiGatewayRestApi
+          StageName: !Ref Environment
+
+  ApiGatewayUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref ApiGatewayApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref ApiGatewayUsagePlan
 
 Outputs:
   ApiEndpoint:

@@ -11,3 +11,5 @@ pyserial
 smbus2
 spidev
 pyserial
+
+jsonschema

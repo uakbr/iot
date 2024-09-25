@@ -1,83 +1,39 @@
 import time
 import logging
-from data_sampler import DataSampler  # Updated import
-from calibration import calibrate_sensor
 import json
-import requests
 import os
+import ssl
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Load environment variables or configuration if needed
-API_ENDPOINT = os.getenv('API_ENDPOINT', 'http://localhost:5000')
-DEVICE_ID = os.getenv('DEVICE_ID', 'device-001')
-SEND_INTERVAL = int(os.getenv('SEND_INTERVAL', '5'))  # seconds
+IOT_ENDPOINT = os.getenv('IOT_ENDPOINT')
+CLIENT_ID = os.getenv('CLIENT_ID', 'device-001')
+PATH_TO_CERT = os.getenv('PATH_TO_CERT', 'certs/device.pem.crt')
+PATH_TO_KEY = os.getenv('PATH_TO_KEY', 'certs/private.pem.key')
+PATH_TO_ROOT = os.getenv('PATH_TO_ROOT', 'certs/AmazonRootCA1.pem')
+TOPIC = os.getenv('TOPIC', 'sensor/data')
 
-def send_data(data):
-    """
-    Send sampled data to the API endpoint.
-
-    Parameters:
-        data (dict): The sensor data to send.
-    """
-    try:
-        response = requests.post(f"{API_ENDPOINT}/sensor-data", json=data)
-        response.raise_for_status()
-        logger.info(f"Data sent successfully: {data}")
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Failed to send data: {e}")
-        # Implement exponential backoff for retries
-        for retry in range(1, 4):
-            sleep_time = 2 ** retry
-            logger.info(f"Retrying in {sleep_time} seconds...")
-            time.sleep(sleep_time)
-            try:
-                response = requests.post(f"{API_ENDPOINT}/sensor-data", json=data)
-                response.raise_for_status()
-                logger.info(f"Data sent on retry {retry}: {data}")
-                break
-            except requests.exceptions.RequestException as e:
-                logger.error(f"Retry {retry} failed: {e}")
-        else:
-            logger.error("Failed to send data after retries.")
+def send_data_mqtt(data):
+    mqtt_client = AWSIoTMQTTClient(CLIENT_ID)
+    mqtt_client.configureEndpoint(IOT_ENDPOINT, 8883)
+    mqtt_client.configureCredentials(PATH_TO_ROOT, PATH_TO_KEY, PATH_TO_CERT)
+    mqtt_client.connect()
+    mqtt_client.publish(TOPIC, json.dumps(data), 1)
+    mqtt_client.disconnect()
+    logger.info(f"Data sent to AWS IoT Core: {data}")
 
 def main():
-    """
-    Main function to initialize sensors, calibrate them, and start data sampling.
-    """
-    try:
-        # Initialize hardware interfaces
-        i2c = I2CInterface(bus_number=1)
-        spi = SPIInterface(bus=0, device=0)
-        uart = UARTInterface(port='/dev/ttyUSB0', baudrate=115200)
+    # ... existing initialization code ...
 
-        # Initialize sensors
-        temperature_sensor = TemperatureSensor(i2c_address=0x48, i2c=i2c)
-        humidity_sensor = HumiditySensor(i2c_address=0x40, i2c=i2c)
-
-        # Calibrate sensors
-        temperature_sensor = calibrate_sensor(temperature_sensor, offset=0.5, scale=1.02)
-        humidity_sensor = calibrate_sensor(humidity_sensor, offset=-1.0, scale=0.98)
-
-        # Initialize data sampler
-        sampler = DataSampler(interval=SEND_INTERVAL)
-        sampler.add_sensor(temperature_sensor)
-        sampler.add_sensor(humidity_sensor)
-
-        logger.info("Starting data sampling...")
-        while True:
-            data = sampler.sample()
-            # Add device-specific information
-            data['device_id'] = DEVICE_ID
-            data['timestamp'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
-            send_data(data)
-            time.sleep(sampler.interval)
-    except KeyboardInterrupt:
-        logger.info("Data sampling stopped by user.")
-    except Exception as e:
-        logger.error(f"Unexpected error: {e}")
-
-if __name__ == "__main__":
-    main()
+    logger.info("Starting data sampling...")
+    while True:
+        data = sampler.sample()
+        # Add device-specific information
+        data['device_id'] = DEVICE_ID
+        data['timestamp'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+        send_data_mqtt(data)
+        time.sleep(sampler.interval)

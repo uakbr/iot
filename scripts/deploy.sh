@@ -38,4 +38,15 @@ aws cloudformation deploy \
     $PARAMETERS \
     --capabilities CAPABILITY_NAMED_IAM
 
+echo "Fetching API Key..."
+API_KEY_ID=$(aws apigateway get-api-keys --name-query "${STACK_NAME}-ApiKey" --include-values --region "${AWS_REGION}" --query 'items[0].id' --output text)
+API_KEY_VALUE=$(aws apigateway get-api-key --api-key "${API_KEY_ID}" --include-value --region "${AWS_REGION}" --query 'value' --output text)
+
+echo "API Key: ${API_KEY_VALUE}"
+
+echo "Storing configuration parameters in Parameter Store..."
+aws ssm put-parameter --name "/${STACK_NAME}/temperature_threshold" --type "String" --value "30" --overwrite
+aws ssm put-parameter --name "/${STACK_NAME}/humidity_threshold" --type "String" --value "70" --overwrite
+# ... add more parameters as needed ...
+
 echo "Deployment complete."

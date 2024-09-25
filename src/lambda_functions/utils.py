@@ -5,6 +5,11 @@ import logging
 import json
 import decimal
 import boto3
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.core import patch_all
+
+# Patch all supported libraries
+patch_all()
 
 def setup_logging(level=logging.INFO):
     """Set up logging configuration"""

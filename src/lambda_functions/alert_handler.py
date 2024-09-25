@@ -3,6 +3,8 @@ import boto3
 import os
 import logging
 from utils import setup_logging, load_config
+from boto3.dynamodb.conditions import Key
+from botocore.exceptions import ClientError
 
 # Set up logging
 logger = setup_logging()
@@ -25,16 +27,15 @@ def lambda_handler(event, context):
         None
     """
     try:
-        config = load_config(CONFIG_BUCKET, CONFIG_KEY)
-        # Existing thresholds
-        temperature_threshold = config.get('temperature_threshold', 30)
-        humidity_threshold = config.get('humidity_threshold', 70)
-        # New thresholds
-        aqi_threshold = config.get('aqi_threshold', 100)
-        co2_threshold = config.get('co2_threshold', 1000)
-        noise_level_threshold = config.get('noise_level_threshold', 85)
-        battery_level_threshold = config.get('battery_level_threshold', 20)
-        # ... add more as needed ...
+        ssm = boto3.client('ssm')
+
+        # Fetch thresholds from Parameter Store
+        temperature_threshold = float(ssm.get_parameter(Name=f"/{STACK_NAME}/temperature_threshold")['Parameter']['Value'])
+        humidity_threshold = float(ssm.get_parameter(Name=f"/{STACK_NAME}/humidity_threshold")['Parameter']['Value'])
+        aqi_threshold = float(ssm.get_parameter(Name=f"/{STACK_NAME}/aqi_threshold")['Parameter']['Value'])
+        co2_threshold = float(ssm.get_parameter(Name=f"/{STACK_NAME}/co2_threshold")['Parameter']['Value'])
+        noise_level_threshold = float(ssm.get_parameter(Name=f"/{STACK_NAME}/noise_level_threshold")['Parameter']['Value'])
+        battery_level_threshold = float(ssm.get_parameter(Name=f"/{STACK_NAME}/battery_level_threshold")['Parameter']['Value'])
 
         for record in event['Records']:
             if 'dynamodb' in record:
@@ -75,6 +76,9 @@ def lambda_handler(event, context):
                     Subject='Sensor Alert'
                 )
                 logger.info(f"Alert sent: {alert}, SNS Message ID: {response['MessageId']}")
+    except ClientError as e:
+        logger.error(f"Error fetching configuration from Parameter Store: {e}")
+        raise e
     except Exception as e:
         logger.error(f"Error in alert handler: {e}")
         raise e

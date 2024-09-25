@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 API_ENDPOINT = os.getenv('API_ENDPOINT')
 DEVICE_ID = os.getenv('DEVICE_ID', 'device-001')
 SEND_INTERVAL = int(os.getenv('SEND_INTERVAL', '5'))  # seconds
+API_KEY = os.getenv('API_KEY')  # New environment variable for API Key
 
 def simulate_device():
     while True:
@@ -39,9 +40,10 @@ def simulate_device():
             "orientation": random.choice(['Upright', 'Upside Down', 'Sideways']),
             "motion_detected": random.choice([True, False]),
         }
+        headers = {'x-api-key': API_KEY}
         try:
             # Ensure API_ENDPOINT includes the full URL
-            response = requests.post(API_ENDPOINT, json=data)
+            response = requests.post(f"{API_ENDPOINT}/sensor-data", json=data, headers=headers)
             response.raise_for_status()
             logger.info(f"Data sent: {data}")
         except requests.exceptions.RequestException as e:
@@ -52,7 +54,7 @@ def simulate_device():
                 logger.info(f"Retrying in {sleep_time} seconds...")
                 time.sleep(sleep_time)
                 try:
-                    response = requests.post(API_ENDPOINT, json=data)
+                    response = requests.post(f"{API_ENDPOINT}/sensor-data", json=data, headers=headers)
                     response.raise_for_status()
                     logger.info(f"Data sent on retry {retry}: {data}")
                     break
