@@ -1,7 +1,7 @@
 # IoT Sensor Data Collection & Analytics Platform
 
 <div align="center">
-  <img src="https://i.imgur.com/yifENs0.png" alt="Image" />
+  <img src="https://i.imgur.com/6sAG7Rh.png" alt="Image" />
 </div>
 
 ---
