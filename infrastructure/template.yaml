@@ -119,12 +119,62 @@ Resources:
               - sns:Publish
             Resource: !Ref SensorAlertTopic
 
-  # Kinesis Data Stream
+  # Kinesis Data Stream for Sensor Data
   SensorDataStream:
     Type: AWS::Kinesis::Stream
     Properties:
-      Name: !Sub '${ProjectName}-SensorDataStream'
+      Name: !Sub "${ProjectName}-SensorDataStream"
       ShardCount: 1
+
+  # Kinesis Data Analytics Application
+  KinesisAnalyticsApplication:
+    Type: AWS::KinesisAnalyticsV2::Application
+    Properties:
+      ApplicationName: !Sub "${ProjectName}-AnalyticsApp"
+      RuntimeEnvironment: SQL-1_0
+      ServiceExecutionRole: !GetAtt KinesisAnalyticsRole.Arn
+      ApplicationConfiguration:
+        SqlApplicationConfiguration:
+          Inputs:
+            - NamePrefix: "SOURCE_SQL_STREAM"
+              KinesisStreamsInput:
+                ResourceARN: !GetAtt SensorDataStream.Arn
+              InputSchema:
+                RecordFormat:
+                  RecordFormatType: JSON
+                  MappingParameters:
+                    JSONMappingParameters:
+                      RecordRowPath: "$"
+                RecordColumns:
+                  - Name: "device_id"
+                    SqlType: "VARCHAR(50)"
+                    Mapping: "$.device_id"
+                  - Name: "timestamp"
+                    SqlType: "TIMESTAMP"
+                    Mapping: "$.timestamp"
+                  - Name: "temperature"
+                    SqlType: "FLOAT"
+                    Mapping: "$.temperature"
+          ApplicationCodeConfiguration:
+            CodeContent:
+              S3ContentLocation:
+                BucketARN: !Sub "arn:aws:s3:::${CodeS3Bucket}"
+                FileKey: "analytics/real_time_metrics.sql"
+            CodeContentType: "SQL"
+
+  # IAM Role for Kinesis Analytics
+  KinesisAnalyticsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: kinesisanalytics.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonKinesisAnalyticsFullAccess
 
   # Lambda Function: Data Processor
   DataProcessorFunction:
@@ -140,6 +190,7 @@ Resources:
       Environment:
         Variables:
           DYNAMODB_TABLE: !Ref SensorDataTable
+          KINESIS_STREAM_NAME: !Ref SensorDataStream
       Events:
         KinesisEvent:
           Type: Kinesis
@@ -264,10 +315,7 @@ Resources:
         Statement:
           - Effect: Allow
             Action:
-              - iot:Connect
-              - iot:Publish
-              - iot:Subscribe
-              - iot:Receive
+              - 'iot:*'
             Resource: '*'
 
   # AWS IoT Thing
@@ -296,48 +344,6 @@ Resources:
     Properties:
       ThingName: !Ref IoTThing
       Principal: !Ref IoTCertificate
-
-  # Kinesis Data Analytics Application
-  KinesisAnalyticsApp:
-    Type: AWS::KinesisAnalytics::Application
-    Properties:
-      ApplicationName: !Sub '${ProjectName}-AnalyticsApp'
-      Inputs:
-        - NamePrefix: "SOURCE_SQL_STREAM"
-          KinesisStreamsInput:
-            ResourceARN: !GetAtt SensorDataStream.Arn
-            RoleARN: !GetAtt KinesisAnalyticsRole.Arn
-          InputSchema:
-            RecordFormat:
-              RecordFormatType: JSON
-              MappingParameters:
-                JSONMappingParameters:
-                  RecordRowPath: "$"
-            RecordColumns:
-              - Name: "device_id"
-                Mapping: "$.device_id"
-                SqlType: "VARCHAR(50)"
-              - Name: "timestamp"
-                Mapping: "$.timestamp"
-                SqlType: "TIMESTAMP"
-              - Name: "temperature"
-                Mapping: "$.temperature"
-                SqlType: "FLOAT"
-              # ... add other fields ...
-
-  # IAM Role for Kinesis Analytics
-  KinesisAnalyticsRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: kinesisanalytics.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonKinesisAnalyticsFullAccess
 
 Outputs:
   ApiEndpoint:

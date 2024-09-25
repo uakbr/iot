@@ -5,10 +5,9 @@ import logging
 import json
 import decimal
 import boto3
-from aws_xray_sdk.core import xray_recorder
-from aws_xray_sdk.core import patch_all
+from aws_xray_sdk.core import xray_recorder, patch_all
 
-# Patch all supported libraries
+# Enable X-Ray tracing
 patch_all()
 
 def setup_logging():
@@ -16,12 +15,13 @@ def setup_logging():
     Set up the logger with desired settings.
     """
     logger = logging.getLogger()
-    if not logger.handlers:
-        logger.setLevel(logging.INFO)
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter('%(levelname)s\t%(asctime)s\t%(message)s')
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    for handler in logger.handlers:
+        logger.removeHandler(handler)
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter('%(levelname)s\t%(asctime)s\t%(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
     return logger
 
 class DecimalEncoder(json.JSONEncoder):

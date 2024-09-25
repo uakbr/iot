@@ -3,71 +3,63 @@ import boto3
 import os
 import logging
 from utils import setup_logging, DecimalEncoder
-from jsonschema import validate, ValidationError  # New import
+from jsonschema import validate, ValidationError
 
-# Set up logging
 logger = setup_logging()
-
-# Initialize DynamoDB table
-table_name = os.environ.get('DYNAMODB_TABLE')
 dynamodb = boto3.resource('dynamodb')
+kinesis = boto3.client('kinesis')
+table_name = os.environ.get('DYNAMODB_TABLE')
+kinesis_stream_name = os.environ.get('KINESIS_STREAM_NAME')
 table = dynamodb.Table(table_name)
 
-# Define the expected schema
-sensor_data_schema = {
+# Define JSON schema for input validation
+schema = {
     "type": "object",
     "properties": {
         "device_id": {"type": "string"},
         "timestamp": {"type": "string", "format": "date-time"},
-        "temperature": {"type": "number"},
-        "humidity": {"type": "number"},
-        # ... add other fields ...
+        "temperature": {"type": ["number", "null"]},
+        "humidity": {"type": ["number", "null"]},
+        # Add other sensor fields
     },
     "required": ["device_id", "timestamp"],
+    "additionalProperties": False
 }
 
 def lambda_handler(event, context):
     """
-    Lambda function to process incoming sensor data and store it in DynamoDB.
-
-    Parameters:
-        event (dict): AWS event data containing sensor records.
-        context: Runtime information of the Lambda function.
-
-    Returns:
-        dict: Response with status code and message.
+    Process incoming sensor data and store it in DynamoDB.
     """
     try:
-        payload = json.loads(event['body'])
+        payload = json.loads(event.get('body', '{}'))
 
-        # Validate payload against the schema
-        validate(instance=payload, schema=sensor_data_schema)
+        # Validate payload
+        validate(instance=payload, schema=schema)
 
-        # Convert and sanitize data
-        item = {
-            'device_id': payload['device_id'],
-            'timestamp': payload['timestamp'],
-            'temperature': float(payload.get('temperature', 0)),
-            'humidity': float(payload.get('humidity', 0)),
-            # ... process other fields ...
-        }
+        # Store in DynamoDB
+        table.put_item(Item=payload)
+        logger.info(f"Data stored in DynamoDB: {payload}")
 
-        # Store item in DynamoDB
-        table.put_item(Item=item)
-        logger.info(f"Data stored in DynamoDB: {item}")
+        # Publish to Kinesis
+        kinesis.put_record(
+            StreamName=kinesis_stream_name,
+            Data=json.dumps(payload),
+            PartitionKey=payload['device_id']
+        )
+        logger.info(f"Data published to Kinesis: {payload}")
 
         return {
             'statusCode': 200,
-            'body': json.dumps({'message': 'Data stored successfully'}, cls=DecimalEncoder)
+            'body': json.dumps({'message': 'Data stored successfully'})
         }
     except ValidationError as ve:
-        logger.error(f"Payload validation error: {ve.message}")
+        logger.error(f"Validation error: {ve.message}")
         return {
             'statusCode': 400,
-            'body': json.dumps({'error': f'Invalid payload: {ve.message}'})
+            'body': json.dumps({'error': f'Invalid input: {ve.message}'})
         }
     except Exception as e:
-        logger.error(f"Error processing data: {e}")
+        logger.error(f"Processing error: {e}")
         return {
             'statusCode': 500,
             'body': json.dumps({'error': 'Internal server error'})

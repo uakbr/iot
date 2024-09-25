@@ -17,5 +17,12 @@ class TestDataProcessor(unittest.TestCase):
         response = data_processor.lambda_handler(event, None)
         self.assertEqual(response['statusCode'], 400)
 
+    def test_missing_required_fields(self):
+        event = {
+            'body': '{"timestamp": "2023-10-15T14:30:00Z", "temperature": 25.5}'
+        }
+        response = data_processor.lambda_handler(event, None)
+        self.assertEqual(response['statusCode'], 400)
+
 if __name__ == '__main__':
     unittest.main()
