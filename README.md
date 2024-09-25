@@ -48,7 +48,7 @@
 
 ## Introduction
 
-**Note**: For detailed business strategies, supply chain logistics, and operational workflows related to this platform, please refer to the comprehensive business plan document available in the `docs/` directory: [Business Plan](docs/business_plan.md). This document outlines in-depth technical specifications, manufacturing processes, and deployment strategies.
+**Note**: For detailed business strategies, supply chain logistics, and operational workflows related to this platform, please refer to the comprehensive business plan document available in the `docs/` directory: [Business Plan](docs/business.md). This document outlines in-depth technical specifications, manufacturing processes, and deployment strategies.
 
 The **IoT Sensor Data Collection & Analytics Platform** is a comprehensive, scalable, and serverless solution designed to collect, process, and analyze real-time data from a wide range of IoT devices. Leveraging advanced AWS services and adhering to best practices in cloud architecture, this platform provides end-to-end capabilities for integrating various sensors that capture environmental and device metrics, such as:
 
