@@ -107,8 +107,8 @@ The platform is built upon a microservices architecture utilizing AWS serverless
 ```mermaid
 graph TD
     subgraph IoT Devices
-        Device1[IoT Device<br/>(e.g., TI MSP432P401R)]
-        Device2[Simulated Device<br/>(Device Simulator)]
+        Device1[IoT Device<br/>e.g., TI MSP432P401R]
+        Device2[Simulated Device<br/>Device Simulator]
     end
 
     Device1 -->|HTTPS POST /sensor-data| APIGateway[AWS API Gateway]
