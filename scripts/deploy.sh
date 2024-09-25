@@ -38,6 +38,9 @@ aws cloudformation deploy \
     $PARAMETERS \
     --capabilities CAPABILITY_NAMED_IAM
 
+# Fetch AWS Region
+AWS_REGION=$(aws configure get region)
+
 echo "Fetching API Key..."
 API_KEY_ID=$(aws apigateway get-api-keys --name-query "${STACK_NAME}-ApiKey" --include-values --region "${AWS_REGION}" --query 'items[0].id' --output text)
 API_KEY_VALUE=$(aws apigateway get-api-key --api-key "${API_KEY_ID}" --include-value --region "${AWS_REGION}" --query 'value' --output text)

@@ -13,3 +13,5 @@ spidev
 pyserial
 
 jsonschema
+aws-xray-sdk
+AWSIoTPythonSDK

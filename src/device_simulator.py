@@ -12,7 +12,7 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-API_ENDPOINT = os.getenv('API_ENDPOINT')
+API_ENDPOINT = os.getenv('API_ENDPOINT', 'https://your-api-endpoint.amazonaws.com/dev')
 DEVICE_ID = os.getenv('DEVICE_ID', 'device-001')
 SEND_INTERVAL = int(os.getenv('SEND_INTERVAL', '5'))  # seconds
 API_KEY = os.getenv('API_KEY')  # New environment variable for API Key

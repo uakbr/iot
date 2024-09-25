@@ -246,9 +246,6 @@ Resources:
     Properties:
       Name: !Sub '${ProjectName}-ApiKey'
       Enabled: true
-      StageKeys:
-        - RestApiId: !Ref ApiGatewayRestApi
-          StageName: !Ref Environment
 
   ApiGatewayUsagePlanKey:
     Type: AWS::ApiGateway::UsagePlanKey

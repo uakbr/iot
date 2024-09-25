@@ -11,25 +11,27 @@ from aws_xray_sdk.core import patch_all
 # Patch all supported libraries
 patch_all()
 
-def setup_logging(level=logging.INFO):
-    """Set up logging configuration"""
+def setup_logging():
+    """
+    Set up the logger with desired settings.
+    """
     logger = logging.getLogger()
     if not logger.handlers:
-        # Clear existing handlers
-        logger.handlers = []
-        # Configure logging
-        logging.basicConfig(level=level)
-    else:
-        for handler in logger.handlers:
-            handler.setLevel(level)
+        logger.setLevel(logging.INFO)
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(levelname)s\t%(asctime)s\t%(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
     return logger
 
 class DecimalEncoder(json.JSONEncoder):
-    """Custom JSON encoder for decimal.Decimal objects"""
-    def default(self, obj):
-        if isinstance(obj, decimal.Decimal):
-            return float(obj)
-        return super(DecimalEncoder, self).default(obj)
+    """
+    Helper class to convert a DynamoDB item to JSON.
+    """
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+            return float(o)
+        return super(DecimalEncoder, self).default(o)
 
 def load_config(bucket_name, key):
     """Load configuration from an S3 bucket"""
