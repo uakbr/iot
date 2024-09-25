@@ -42,7 +42,7 @@ def simulate_device():
         }
         headers = {'x-api-key': API_KEY}
         try:
-            # Ensure API_ENDPOINT includes the full URL
+            # Use API_ENDPOINT directly
             response = requests.post(f"{API_ENDPOINT}/sensor-data", json=data, headers=headers)
             response.raise_for_status()
             logger.info(f"Data sent: {data}")
@@ -69,7 +69,5 @@ if __name__ == "__main__":
         logger.error("API_ENDPOINT is not set in the environment variables.")
         exit(1)
     else:
-        # Make sure API_ENDPOINT ends with '/sensor-data'
-        if not API_ENDPOINT.endswith('/sensor-data'):
-            API_ENDPOINT = API_ENDPOINT.rstrip('/') + '/sensor-data'
+        # Remove redundant code that modifies API_ENDPOINT
         simulate_device()

@@ -1,56 +1,73 @@
+import network
 import time
-import logging
-import json
-import os
-import ssl
-from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
+import ujson as json
+import urequests as requests
+from machine import Pin, ADC
+import dht
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Configuration
+WIFI_SSID = 'your_wifi_ssid'
+WIFI_PASSWORD = 'your_wifi_password'
+API_ENDPOINT = 'https://your-api-endpoint.amazonaws.com/dev'
+API_KEY = 'your_api_key'
+DEVICE_ID = 'device-esp32-001'
+SEND_INTERVAL = 5  # seconds
 
-# Load environment variables or configuration if needed
-IOT_ENDPOINT = os.getenv('IOT_ENDPOINT')
-CLIENT_ID = os.getenv('CLIENT_ID', 'device-001')
-PATH_TO_CERT = os.getenv('PATH_TO_CERT', 'certs/device.pem.crt')
-PATH_TO_KEY = os.getenv('PATH_TO_KEY', 'certs/private.pem.key')
-PATH_TO_ROOT = os.getenv('PATH_TO_ROOT', 'certs/AmazonRootCA1.pem')
-TOPIC = os.getenv('TOPIC', 'sensor/data')
-DEVICE_ID = os.getenv('DEVICE_ID', 'device-001')
-SEND_INTERVAL = int(os.getenv('SEND_INTERVAL', '5'))  # seconds
+# Initialize Sensors
+dht_sensor = dht.DHT22(Pin(4))
+mq135_sensor = ADC(Pin(36))
+mq135_sensor.atten(ADC.ATTN_11DB)  # Configure ADC range (0-3.6V)
 
-# Ensure the certificates and keys are correctly referenced
-if not all([IOT_ENDPOINT, os.path.isfile(PATH_TO_CERT), os.path.isfile(PATH_TO_KEY), os.path.isfile(PATH_TO_ROOT)]):
-    logger.error("Missing IoT endpoint or certificates/keys.")
-    exit(1)
+# Connect to Wi-Fi
+def connect_wifi(ssid, password):
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    if not wlan.isconnected():
+        print('Connecting to network...')
+        wlan.connect(ssid, password)
+        while not wlan.isconnected():
+            pass
+    print('Network configuration:', wlan.ifconfig())
 
-def send_data_mqtt(data):
-    """
-    Send data to AWS IoT Core via MQTT.
+# Send data to API
+def send_data(data):
+    headers = {'Content-Type': 'application/json', 'x-api-key': API_KEY}
+    try:
+        response = requests.post(API_ENDPOINT + '/sensor-data', data=json.dumps(data), headers=headers)
+        if response.status_code == 200:
+            print('Data sent:', data)
+        else:
+            print('Failed to send data:', response.text)
+    except Exception as e:
+        print('Error sending data:', e)
 
-    Parameters:
-        data (dict): The sensor data to send.
-    """
-    mqtt_client = AWSIoTMQTTClient(CLIENT_ID)
-    mqtt_client.configureEndpoint(IOT_ENDPOINT, 8883)
-    mqtt_client.configureCredentials(PATH_TO_ROOT, PATH_TO_KEY, PATH_TO_CERT)
-    mqtt_client.connect()
-    mqtt_client.publish(TOPIC, json.dumps(data), 1)
-    mqtt_client.disconnect()
-    logger.info(f"Data sent to AWS IoT Core: {data}")
-
+# Main loop
 def main():
-    # Initialize data sampler (assuming it's defined elsewhere)
-    sampler = DataSampler()
-    
-    logger.info("Starting data sampling...")
+    connect_wifi(WIFI_SSID, WIFI_PASSWORD)
     while True:
-        data = sampler.sample()
-        # Add device-specific information
-        data['device_id'] = DEVICE_ID
-        data['timestamp'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
-        send_data_mqtt(data)
+        try:
+            # Read DHT22 sensor
+            dht_sensor.measure()
+            temperature = dht_sensor.temperature()
+            humidity = dht_sensor.humidity()
+
+            # Read MQ135 sensor
+            air_quality_value = mq135_sensor.read()
+
+            # Prepare data payload
+            data = {
+                'device_id': DEVICE_ID,
+                'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+                'temperature': temperature,
+                'humidity': humidity,
+                'air_quality_index': air_quality_value,
+            }
+
+            send_data(data)
+        except Exception as e:
+            print('Error reading sensors:', e)
+
         time.sleep(SEND_INTERVAL)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
