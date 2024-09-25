@@ -33,9 +33,10 @@ class DecimalEncoder(json.JSONEncoder):
             return float(o)
         return super(DecimalEncoder, self).default(o)
 
+s3 = boto3.client('s3')  # Initialize at module level
+
 def load_config(bucket_name, key):
     """Load configuration from an S3 bucket"""
-    s3 = boto3.client('s3')
     try:
         response = s3.get_object(Bucket=bucket_name, Key=key)
         config_content = response['Body'].read().decode('utf-8')

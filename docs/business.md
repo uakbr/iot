@@ -17,7 +17,7 @@ Our attention to detail extends to regulatory compliance with **FCC**, **CE**, *
   - Revenue: **$6.5 million**
   - Gross Margin: **60%**
   - Net Profit: **$1 million**
-- **Year 3**:
+i- **Year 3**:
   - Revenue: **$30 million**
   - Gross Margin: **65%**
   - Net Profit: **$6 million**

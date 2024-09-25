@@ -3,7 +3,7 @@ import boto3
 import os
 import logging
 from utils import setup_logging, DecimalEncoder
-from jsonschema import validate, ValidationError
+from jsonschema import validate, ValidationError, Draft7Validator
 
 logger = setup_logging()
 dynamodb = boto3.resource('dynamodb')
@@ -26,6 +26,9 @@ schema = {
     "additionalProperties": False
 }
 
+# Compile the validator at the module level
+validator = Draft7Validator(schema)
+
 def lambda_handler(event, context):
     """
     Process incoming sensor data and store it in DynamoDB.
@@ -33,8 +36,15 @@ def lambda_handler(event, context):
     try:
         payload = json.loads(event.get('body', '{}'))
 
-        # Validate payload
-        validate(instance=payload, schema=schema)
+        # Use the compiled validator
+        errors = list(validator.iter_errors(payload))
+        if errors:
+            first_error = errors[0]
+            logger.error(f"Validation error: {first_error.message}")
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'error': f'Invalid input: {first_error.message}'})
+            }
 
         # Store in DynamoDB
         table.put_item(Item=payload)
