@@ -1,5 +1,11 @@
 # IoT Sensor Data Collection & Analytics Platform
 
+<div align="center">
+  <img src="https://i.imgur.com/yifENs0.png" alt="Image" />
+</div>
+
+---
+
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/downloads/release/python-380/)
 [![AWS](https://img.shields.io/badge/AWS-Services-orange)](https://aws.amazon.com/)
