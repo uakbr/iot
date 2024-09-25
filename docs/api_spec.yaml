@@ -1,0 +1,38 @@
+openapi: 3.0.1
+info:
+  title: IoT Sensor Data API
+  version: 1.0.0
+paths:
+  /sensor-data:
+    post:
+      summary: Submit sensor data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SensorData'
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid input
+
+components:
+  schemas:
+    SensorData:
+      type: object
+      properties:
+        device_id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        temperature:
+          type: number
+        humidity:
+          type: number
+        # ... add other fields ...
+      required:
+        - device_id
+        - timestamp

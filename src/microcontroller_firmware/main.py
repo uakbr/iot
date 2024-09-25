@@ -19,6 +19,11 @@ TOPIC = os.getenv('TOPIC', 'sensor/data')
 DEVICE_ID = os.getenv('DEVICE_ID', 'device-001')
 SEND_INTERVAL = int(os.getenv('SEND_INTERVAL', '5'))  # seconds
 
+# Ensure the certificates and keys are correctly referenced
+if not all([IOT_ENDPOINT, os.path.isfile(PATH_TO_CERT), os.path.isfile(PATH_TO_KEY), os.path.isfile(PATH_TO_ROOT)]):
+    logger.error("Missing IoT endpoint or certificates/keys.")
+    exit(1)
+
 def send_data_mqtt(data):
     """
     Send data to AWS IoT Core via MQTT.

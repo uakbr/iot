@@ -254,7 +254,98 @@ Resources:
       KeyType: API_KEY
       UsagePlanId: !Ref ApiGatewayUsagePlan
 
+  # AWS IoT Policy
+  IoTPolicy:
+    Type: AWS::IoT::Policy
+    Properties:
+      PolicyName: !Sub '${ProjectName}-IoTPolicy'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - iot:Connect
+              - iot:Publish
+              - iot:Subscribe
+              - iot:Receive
+            Resource: '*'
+
+  # AWS IoT Thing
+  IoTThing:
+    Type: AWS::IoT::Thing
+    Properties:
+      ThingName: !Sub '${ProjectName}-${DeviceId}'
+
+  # AWS IoT Certificate
+  IoTCertificate:
+    Type: AWS::IoT::Certificate
+    Properties:
+      Status: ACTIVE
+    DependsOn: IoTPolicy
+
+  # Attach Policy to Certificate
+  IoTPolicyCertificateAttachment:
+    Type: AWS::IoT::PolicyPrincipalAttachment
+    Properties:
+      PolicyName: !Ref IoTPolicy
+      Principal: !Ref IoTCertificate
+
+  # Attach Certificate to Thing
+  IoTThingCertificateAttachment:
+    Type: AWS::IoT::ThingPrincipalAttachment
+    Properties:
+      ThingName: !Ref IoTThing
+      Principal: !Ref IoTCertificate
+
+  # Kinesis Data Analytics Application
+  KinesisAnalyticsApp:
+    Type: AWS::KinesisAnalytics::Application
+    Properties:
+      ApplicationName: !Sub '${ProjectName}-AnalyticsApp'
+      Inputs:
+        - NamePrefix: "SOURCE_SQL_STREAM"
+          KinesisStreamsInput:
+            ResourceARN: !GetAtt SensorDataStream.Arn
+            RoleARN: !GetAtt KinesisAnalyticsRole.Arn
+          InputSchema:
+            RecordFormat:
+              RecordFormatType: JSON
+              MappingParameters:
+                JSONMappingParameters:
+                  RecordRowPath: "$"
+            RecordColumns:
+              - Name: "device_id"
+                Mapping: "$.device_id"
+                SqlType: "VARCHAR(50)"
+              - Name: "timestamp"
+                Mapping: "$.timestamp"
+                SqlType: "TIMESTAMP"
+              - Name: "temperature"
+                Mapping: "$.temperature"
+                SqlType: "FLOAT"
+              # ... add other fields ...
+
+  # IAM Role for Kinesis Analytics
+  KinesisAnalyticsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: kinesisanalytics.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonKinesisAnalyticsFullAccess
+
 Outputs:
   ApiEndpoint:
     Description: API Gateway endpoint URL
     Value: !Sub 'https://${ApiGatewayRestApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}'
+  IoTEndpoint:
+    Value: !Sub '${AWS::IoT::Endpoint}'
+    Description: 'AWS IoT Core Endpoint'
+  CertificateArn:
+    Value: !Ref IoTCertificate
+    Description: 'AWS IoT Certificate ARN'

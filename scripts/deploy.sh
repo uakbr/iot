@@ -52,4 +52,35 @@ aws ssm put-parameter --name "/${STACK_NAME}/temperature_threshold" --type "Stri
 aws ssm put-parameter --name "/${STACK_NAME}/humidity_threshold" --type "String" --value "70" --overwrite
 # ... add more parameters as needed ...
 
+echo "Retrieving IoT Core endpoint..."
+IOT_ENDPOINT=$(aws iot describe-endpoint --endpoint-type iot:Data-ATS --query 'endpointAddress' --output text)
+echo "IoT Endpoint: ${IOT_ENDPOINT}"
+
+echo "Retrieving IoT Certificate and Keys..."
+CERTIFICATES_DIR="../certs"
+mkdir -p "${CERTIFICATES_DIR}"
+
+aws iot describe-certificate --certificate-id "$(basename $(aws cloudformation describe-stack-resource --stack-name "${STACK_NAME}" --logical-resource-id IoTCertificate --query 'StackResourceDetail.PhysicalResourceId' --output text))" --query 'certificateDescription.certificatePem' --output text > "${CERTIFICATES_DIR}/device.pem.crt"
+
+aws iot create-keys-and-certificate --set-as-active \
+    --public-key-outfile "${CERTIFICATES_DIR}/public.pem.key" \
+    --private-key-outfile "${CERTIFICATES_DIR}/private.pem.key" \
+    --certificate-pem-outfile "${CERTIFICATES_DIR}/device.pem.crt" > /dev/null
+
+# Download Root CA
+curl https://www.amazontrust.com/repository/AmazonRootCA1.pem > "${CERTIFICATES_DIR}/AmazonRootCA1.pem"
+
+echo "Certificates and keys stored in ${CERTIFICATES_DIR}"
+
+echo "Uploading analytics SQL script to S3..."
+aws s3 cp ../analytics/real_time_metrics.sql s3://"${CODE_S3_BUCKET}"/
+
+echo "Starting Kinesis Analytics application..."
+aws kinesisanalytics update-application \
+    --application-name "${STACK_NAME}-AnalyticsApp" \
+    --application-update \
+        '{
+            "ApplicationCodeUpdate": "'"$(cat ../analytics/real_time_metrics.sql)"'"
+        }'
+
 echo "Deployment complete."
