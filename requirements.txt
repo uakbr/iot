@@ -1,4 +1,4 @@
-This file lists all the Python packages required for the project. To install the dependencies, users can run: `pip install -r requirements.txt`.
+# This file lists all the Python packages required for the project. To install the dependencies, users can run: `pip install -r requirements.txt`.
 
 boto3
 requests
