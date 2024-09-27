@@ -11,25 +11,7 @@ We have meticulously planned every aspect of our operations, from sourcing raw m
 
 Our attention to detail extends to regulatory compliance with **FCC**, **CE**, **RoHS**, **REACH**, and **WEEE** directives, and we have implemented rigorous quality control protocols adhering to **ISO 9001** and **Six Sigma** methodologies.
 
-**Financial Highlights**:
-
-- **Year 1**:
-  - Revenue: **$6.5 million**
-  - Gross Margin: **60%**
-  - Net Profit: **$1 million**
-i- **Year 3**:
-  - Revenue: **$30 million**
-  - Gross Margin: **65%**
-  - Net Profit: **$6 million**
-- **Break-even Point**: Expected in **Q2 of Year 2**
-
 ---
-
-## Company Description
-
-### Mission Statement
-
-To empower industries with precise, reliable IoT solutions that transform data into actionable insights, driving efficiency, innovation, and competitive advantage through meticulous attention to detail in every aspect of our operations.
 
 ### Vision Statement
 
